@@ -57,8 +57,9 @@ class Settings(BaseSettings):
     # --- Database ---
     DATABASE_URL: str = "sqlite+aiosqlite:///./smartsiksha.db"
 
-    # --- Firebase / Auth ---
-    FIREBASE_PROJECT_ID: str = "smart-shiksha"
+    # --- Auth0 ---
+    AUTH0_DOMAIN: str  # e.g. "dev-xxx.us.auth0.com"
+    AUTH0_CLIENT_ID: str  # SPA client ID
     JWT_SECRET_KEY: str  # No default — must be set in .env
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60   # 1 hour

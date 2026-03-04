@@ -7,7 +7,7 @@ import 'package:smart_shiksha/models/user.dart';
 import 'package:smart_shiksha/services/api_service.dart';
 
 /// Authentication service using JWT tokens.
-/// Handles Google Sign-In flow via backend, token persistence, and user state.
+/// Handles Auth0 sign-in flow via backend, token persistence, and user state.
 class AuthService extends ChangeNotifier {
   static const _tokenKey = 'ss_jwt_token';
   static const _userKey = 'ss_user_json';
@@ -55,13 +55,13 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Authenticate with a Firebase ID token (from Google Sign-In).
-  Future<void> signInWithFirebaseToken(String idToken) async {
+  /// Authenticate with an Auth0 ID token.
+  Future<void> signInWithAuth0Token(String idToken) async {
     _loading = true;
     notifyListeners();
     try {
       final resp = await http.post(
-        Uri.parse('$_base/auth/google'),
+        Uri.parse('$_base/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'id_token': idToken}),
       );
@@ -80,18 +80,19 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// For desktop/dev without Firebase — sign in with email directly.
-  /// Creates or retrieves user from the backend via register endpoint.
+  /// For desktop/dev without Auth0 — sign in with email directly.
+  /// Creates or retrieves user from the backend via the login endpoint.
   Future<void> signInWithEmail(String email, String name) async {
     _loading = true;
     notifyListeners();
     try {
-      // Use a fake Firebase-style token for dev mode
+      // Use a fake token for dev mode (backend DEBUG=True decodes base64)
       final fakeToken = base64Encode(
-        utf8.encode('{"sub":"dev_${email.hashCode}","email":"$email","name":"$name"}'),
+        utf8.encode(
+            '{"sub":"dev_${email.hashCode}","email":"$email","name":"$name"}'),
       );
       final resp = await http.post(
-        Uri.parse('$_base/auth/google'),
+        Uri.parse('$_base/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'id_token': fakeToken}),
       );
@@ -171,7 +172,8 @@ class AuthService extends ChangeNotifier {
       if (curriculum != null) body['curriculum'] = curriculum;
       if (classGrade != null) body['class_grade'] = classGrade;
       if (stream != null) body['stream'] = stream;
-      if (languagePreference != null) body['language_preference'] = languagePreference;
+      if (languagePreference != null)
+        body['language_preference'] = languagePreference;
 
       final resp = await http.patch(
         Uri.parse('$_base/auth/profile'),
@@ -207,17 +209,19 @@ class AuthService extends ChangeNotifier {
       await prefs.setString(_tokenKey, _token!);
     }
     if (_user != null) {
-      await prefs.setString(_userKey, jsonEncode({
-        'id': _user!.id,
-        'name': _user!.name,
-        'email': _user!.email,
-        'profile_picture_url': _user!.profilePictureUrl,
-        'language_preference': _user!.languagePreference,
-        'curriculum': _user!.curriculum,
-        'class_grade': _user!.classGrade,
-        'stream': _user!.stream,
-        'onboarding_complete': _user!.onboardingComplete,
-      }));
+      await prefs.setString(
+          _userKey,
+          jsonEncode({
+            'id': _user!.id,
+            'name': _user!.name,
+            'email': _user!.email,
+            'profile_picture_url': _user!.profilePictureUrl,
+            'language_preference': _user!.languagePreference,
+            'curriculum': _user!.curriculum,
+            'class_grade': _user!.classGrade,
+            'stream': _user!.stream,
+            'onboarding_complete': _user!.onboardingComplete,
+          }));
     }
   }
 }

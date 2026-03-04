@@ -1,29 +1,25 @@
 /**
- * Smart Shiksha — Authentication module (Firebase + Backend JWT).
+ * Smart Shiksha — Authentication module (Auth0 + Backend JWT).
  *
  * Flow:
  *  1. User clicks "Sign in with Google"
- *  2. Firebase popup → Google account selection
- *  3. Firebase ID token sent to POST /api/auth/google
- *  4. Backend verifies, creates/updates user, returns JWT
+ *  2. Auth0 popup → Google account selection
+ *  3. Auth0 ID token sent to POST /api/auth/login
+ *  4. Backend verifies via JWKS, creates/updates user, returns JWT
  *  5. JWT stored in memory (+ localStorage for persistence)
  *  6. All subsequent API calls include Authorization header
  */
 const SmartAuth = (() => {
     "use strict";
 
-    // ── Firebase config ──────────────────────────
-    // Replace with your Firebase project's web app config
-    // from: Firebase Console → Project Settings → Web App
-    const FIREBASE_CONFIG = {
-        apiKey:      "YOUR_FIREBASE_API_KEY",          // ← REQUIRED: paste from Firebase Console
-        authDomain:  "smart-shiksha.firebaseapp.com",
-        projectId:   "smart-shiksha",
-    };
+    // ── Auth0 config ─────────────────────────────
+    const AUTH0_DOMAIN    = "dev-vzwcjg03kzp4d44m.us.auth0.com";
+    const AUTH0_CLIENT_ID = "ZzN4EGlsBIuOie0tru5LEOZKZh920eMw";
 
     const API_BASE = "http://localhost:8000/api";
 
     // ── State ────────────────────────────────────
+    let _auth0Client = null;
     let _jwt = null;
     let _user = null;            // backend user object { id, name, email, ... }
     let _onAuthChange = null;    // callback(user|null)
@@ -31,15 +27,23 @@ const SmartAuth = (() => {
     // ── Public API ───────────────────────────────
 
     /**
-     * Initialise Firebase and restore any persisted session.
+     * Initialise Auth0 client and restore any persisted session.
      * @param {Function} onAuthChange  - called with user object or null
      */
-    function init(onAuthChange) {
+    async function init(onAuthChange) {
         _onAuthChange = onAuthChange;
 
-        // Initialize Firebase (compat SDK loaded via <script> in HTML)
-        if (!firebase.apps.length) {
-            firebase.initializeApp(FIREBASE_CONFIG);
+        // Initialize Auth0 SPA client (loaded via <script> in HTML)
+        try {
+            _auth0Client = await auth0.createAuth0Client({
+                domain: AUTH0_DOMAIN,
+                clientId: AUTH0_CLIENT_ID,
+                cacheLocation: "localstorage",
+            });
+        } catch (err) {
+            console.error("[SmartAuth] Failed to init Auth0:", err);
+            _notify();
+            return;
         }
 
         // Try restore JWT from localStorage
@@ -47,33 +51,41 @@ const SmartAuth = (() => {
         if (storedJwt) {
             _jwt = storedJwt;
             // Validate by calling /api/auth/me
-            _fetchMe().then((user) => {
-                if (user) {
-                    _user = user;
-                    _notify();
-                } else {
-                    // Token expired / invalid — clear
-                    _clearSession();
-                    _notify();
-                }
-            });
+            const user = await _fetchMe();
+            if (user) {
+                _user = user;
+                _notify();
+            } else {
+                // Token expired / invalid — clear
+                _clearSession();
+                _notify();
+            }
         } else {
             _notify();
         }
     }
 
     /**
-     * Start Google Sign-In popup flow.
+     * Start Google Sign-In via Auth0 popup.
      * Resolves with user object on success, null on cancel/error.
      */
     async function signInWithGoogle() {
+        if (!_auth0Client) throw new Error("Auth0 not initialized");
+
         try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await firebase.auth().signInWithPopup(provider);
-            const idToken = await result.user.getIdToken(true);
+            // Open Auth0 popup with Google connection
+            await _auth0Client.loginWithPopup({
+                authorizationParams: {
+                    connection: "google-oauth2",
+                },
+            });
+
+            // Get the ID token from Auth0
+            const claims = await _auth0Client.getIdTokenClaims();
+            const idToken = claims.__raw;
 
             // Exchange with backend
-            const resp = await fetch(`${API_BASE}/auth/google`, {
+            const resp = await fetch(`${API_BASE}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id_token: idToken }),
@@ -92,19 +104,21 @@ const SmartAuth = (() => {
             _notify();
             return _user;
         } catch (err) {
-            // User closed popup → code === "auth/popup-closed-by-user"
-            if (err.code === "auth/popup-closed-by-user") return null;
+            // User closed popup
+            if (err.message && err.message.includes("Popup closed")) return null;
             console.error("[SmartAuth] Sign-in error:", err);
             throw err;
         }
     }
 
     /**
-     * Sign out of Firebase and clear local session.
+     * Sign out of Auth0 and clear local session.
      */
     async function signOut() {
         try {
-            await firebase.auth().signOut();
+            if (_auth0Client) {
+                await _auth0Client.logout({ logoutParams: { localOnly: true } });
+            }
         } catch { /* ignore */ }
         _clearSession();
         _notify();

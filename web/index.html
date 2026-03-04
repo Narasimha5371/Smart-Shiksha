@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Smart Shiksha – Free AI-powered education for every student" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' http://localhost:8000 http://localhost:8001 http://127.0.0.1:8000 http://127.0.0.1:8001 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; font-src 'self'; frame-src https://accounts.google.com https://smart-shiksha.firebaseapp.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.auth0.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' http://localhost:8000 http://localhost:8001 http://127.0.0.1:8000 http://127.0.0.1:8001 https://dev-vzwcjg03kzp4d44m.us.auth0.com; font-src 'self'; frame-src https://dev-vzwcjg03kzp4d44m.us.auth0.com;" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -117,9 +117,8 @@
         <p>&copy; 2026 Smart Shiksha &mdash; <span data-i18n="footerText">Education for All</span></p>
     </footer>
 
-    <!-- Firebase SDK (compat for vanilla JS) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <!-- Auth0 SPA SDK -->
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
 
     <!-- Scripts (order matters) -->
     <script src="js/markdown.js"></script>

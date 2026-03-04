@@ -1,7 +1,7 @@
 """
 Authentication helpers.
 
-- Verify Firebase ID tokens (Google Sign-In).
+- Verify Auth0 ID tokens (Google Sign-In via Auth0).
 - Issue / verify local JWT access tokens.
 - FastAPI dependency to extract the current user from the Authorization header.
 """
@@ -11,9 +11,10 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jose import JWTError, jwt, jwk
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,42 +28,45 @@ settings = get_settings()
 _bearer_scheme = HTTPBearer(auto_error=False)
 
 # ---------------------------------------------------------------------------
-# Firebase ID-token verification (lightweight — no firebase-admin dependency
-# at import time so the rest of the app works even if firebase isn't set up).
+# Auth0 ID-token verification via JWKS
 # ---------------------------------------------------------------------------
 
-_firebase_app = None
-_firebase_works = None  # True/False/None(untested)
+_jwks_cache: dict | None = None
+_jwks_fetched_at: datetime | None = None
+_JWKS_CACHE_TTL = timedelta(hours=6)
 
 
-def _get_firebase_app():
-    """Lazy-init Firebase Admin SDK."""
-    global _firebase_app
-    if _firebase_app is None:
-        try:
-            import firebase_admin  # type: ignore
-            from firebase_admin import credentials  # type: ignore
+async def _get_auth0_jwks() -> dict:
+    """Fetch and cache Auth0 JWKS (public signing keys)."""
+    global _jwks_cache, _jwks_fetched_at
 
-            # Use default credentials or project-id-only credential
-            try:
-                _firebase_app = firebase_admin.get_app()
-            except ValueError:
-                cred = credentials.ApplicationDefault()
-                _firebase_app = firebase_admin.initialize_app(cred, {
-                    "projectId": settings.FIREBASE_PROJECT_ID,
-                })
-        except Exception:
-            if settings.DEBUG:
-                # Firebase not configured — fall back in dev mode only
-                logger.warning("Firebase Admin SDK not configured; using UNSAFE token decode (DEBUG=True).")
-                _firebase_app = "DUMMY"
-            else:
-                logger.error(
-                    "Firebase Admin SDK not configured and DEBUG=False. "
-                    "Authentication will reject all Firebase tokens."
-                )
-                _firebase_app = "REJECTED"
-    return _firebase_app
+    now = datetime.now(timezone.utc)
+    if _jwks_cache and _jwks_fetched_at and (now - _jwks_fetched_at) < _JWKS_CACHE_TTL:
+        return _jwks_cache
+
+    jwks_url = f"https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(jwks_url)
+            resp.raise_for_status()
+            _jwks_cache = resp.json()
+            _jwks_fetched_at = now
+            logger.info("Fetched Auth0 JWKS from %s", jwks_url)
+            return _jwks_cache
+    except Exception as exc:
+        logger.error("Failed to fetch Auth0 JWKS: %s", exc)
+        if _jwks_cache:
+            logger.warning("Using stale JWKS cache.")
+            return _jwks_cache
+        raise HTTPException(status_code=503, detail="Auth service temporarily unavailable")
+
+
+def _find_signing_key(jwks: dict, kid: str) -> dict:
+    """Find the RSA key matching the token's kid in the JWKS."""
+    for key in jwks.get("keys", []):
+        if key.get("kid") == kid:
+            return key
+    raise HTTPException(status_code=401, detail="Invalid token signing key")
 
 
 def _decode_dev_token(id_token: str) -> dict:
@@ -95,60 +99,68 @@ def _decode_dev_token(id_token: str) -> dict:
     raise HTTPException(status_code=401, detail="Invalid token")
 
 
-async def verify_firebase_token(id_token: str, request: Request | None = None) -> dict:
+async def verify_auth0_token(id_token: str, request: Request | None = None) -> dict:
     """
-    Verify a Firebase ID token and return the decoded claims.
+    Verify an Auth0 ID token and return the decoded claims.
 
-    In development (DEBUG=True, no Firebase credentials), we decode without
-    verification so Google Sign-In still works for local testing.
-    In production (DEBUG=False), unsigned tokens are always rejected.
+    In development (DEBUG=True), we allow unsigned tokens for local testing.
+    In production (DEBUG=False), only RS256-signed Auth0 tokens are accepted.
     """
-    global _firebase_works
-    app = _get_firebase_app()
-
     # Determine client IP for logging
     client_ip = "unknown"
     if request and request.client:
         client_ip = request.client.host
 
-    if app == "REJECTED":
-        logger.warning("Auth rejected (no Firebase, production mode) from IP %s", client_ip)
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication service unavailable",
-        )
+    # Try to get the token header to check for RS256
+    try:
+        unverified_header = jwt.get_unverified_header(id_token)
+    except JWTError:
+        if settings.DEBUG:
+            logger.info("Dev-mode token decode for IP %s", client_ip)
+            return _decode_dev_token(id_token)
+        logger.warning("Invalid token header from IP %s", client_ip)
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    if app == "DUMMY":
-        logger.info("Dev-mode token decode for IP %s", client_ip)
-        return _decode_dev_token(id_token)
+    alg = unverified_header.get("alg", "")
 
-    # Firebase SDK is loaded — try real verification
-    if _firebase_works is not False:
+    # If it's an RS256 token (Auth0-signed), verify with JWKS
+    if alg == "RS256":
+        kid = unverified_header.get("kid")
+        if not kid:
+            raise HTTPException(status_code=401, detail="Token missing kid header")
+
+        jwks = await _get_auth0_jwks()
+        signing_key = _find_signing_key(jwks, kid)
+
+        # Build the RSA public key
+        rsa_key = {
+            "kty": signing_key["kty"],
+            "kid": signing_key["kid"],
+            "use": signing_key.get("use", "sig"),
+            "n": signing_key["n"],
+            "e": signing_key["e"],
+        }
+
         try:
-            from firebase_admin import auth as fb_auth  # type: ignore
-            decoded = fb_auth.verify_id_token(id_token, app=app)
-            _firebase_works = True
-            return decoded
-        except Exception as exc:
-            error_msg = str(exc)
-            # If credentials aren't set up, fall back to dev mode only if DEBUG
-            if "credentials" in error_msg.lower() or "default credentials" in error_msg.lower():
-                if settings.DEBUG:
-                    logger.warning("Firebase credentials not found; switching to dev mode (DEBUG=True).")
-                    _firebase_works = False
-                    return _decode_dev_token(id_token)
-                else:
-                    logger.error("Firebase credentials not configured in production. Rejecting token from IP %s.", client_ip)
-                    raise HTTPException(status_code=401, detail="Authentication service unavailable")
-            logger.warning("Firebase token verification failed from IP %s: %s", client_ip, exc)
-            raise HTTPException(status_code=401, detail="Invalid Firebase token")
+            payload = jwt.decode(
+                id_token,
+                rsa_key,
+                algorithms=["RS256"],
+                audience=settings.AUTH0_CLIENT_ID,
+                issuer=f"https://{settings.AUTH0_DOMAIN}/",
+            )
+            return payload
+        except JWTError as exc:
+            logger.warning("Auth0 token verification failed from IP %s: %s", client_ip, exc)
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    # _firebase_works is False — use dev fallback (only works if DEBUG=True)
+    # Non-RS256 token — only allow in dev mode
     if settings.DEBUG:
+        logger.info("Dev-mode token decode (alg=%s) for IP %s", alg, client_ip)
         return _decode_dev_token(id_token)
 
-    logger.warning("Rejecting token (no Firebase, production mode) from IP %s", client_ip)
-    raise HTTPException(status_code=401, detail="Authentication service unavailable")
+    logger.warning("Rejecting non-RS256 token (alg=%s) from IP %s", alg, client_ip)
+    raise HTTPException(status_code=401, detail="Unsupported token algorithm")
 
 
 # ---------------------------------------------------------------------------

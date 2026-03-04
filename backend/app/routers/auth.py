@@ -2,7 +2,8 @@
 Authentication API routes.
 
 Endpoints:
-  POST /api/auth/google     → Google Sign-In (Firebase ID token → JWT)
+  POST /api/auth/login      → Auth0 ID token → local JWT
+  POST /api/auth/google     → Backward-compat alias for /login
   POST /api/auth/onboarding → Complete curriculum onboarding
   GET  /api/auth/me         → Get current user profile
   PATCH /api/auth/profile   → Update profile fields
@@ -14,13 +15,13 @@ from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import create_access_token, get_current_user, verify_firebase_token
+from app.auth import create_access_token, get_current_user, verify_auth0_token
 from app.config import get_settings
 from app.database import get_db
 from app.models import User
 from app.schemas import (
     AuthResponse,
-    GoogleAuthRequest,
+    AuthTokenRequest,
     OnboardingRequest,
     ProfileUpdateRequest,
     UpdateLanguageRequest,
@@ -33,45 +34,47 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 # ──────────────────────────────────────────────
-#  POST /api/auth/google
+#  POST /api/auth/login
 # ──────────────────────────────────────────────
 
-@router.post("/google", response_model=AuthResponse)
+@router.post("/login", response_model=AuthResponse)
 @limiter.limit("20/minute")
-async def google_sign_in(
+async def auth0_login(
     request: Request,
-    body: GoogleAuthRequest = Body(...),
+    body: AuthTokenRequest = Body(...),
     db: AsyncSession = Depends(get_db),
 ) -> AuthResponse:
     """
-    Accept a Firebase ID token from the client, verify it,
+    Accept an Auth0 ID token from the client, verify it,
     create-or-update the user, and return a local JWT.
     """
-    claims = await verify_firebase_token(body.id_token, request=request)
+    claims = await verify_auth0_token(body.id_token, request=request)
 
-    firebase_uid = claims.get("uid") or claims.get("sub") or claims.get("user_id")
+    # Auth0 sub format: "google-oauth2|123456" or "auth0|abc123"
+    auth0_sub = claims.get("sub", "")
     email = claims.get("email", "")
-    name = claims.get("name", email.split("@")[0] if email else "Student")
+    name = claims.get("name") or claims.get("nickname") or (email.split("@")[0] if email else "Student")
     picture = claims.get("picture")
 
-    if not firebase_uid:
-        raise HTTPException(status_code=400, detail="Token missing uid")
+    if not auth0_sub:
+        raise HTTPException(status_code=400, detail="Token missing sub claim")
 
-    # Look up by firebase_uid first, then by email as fallback
-    stmt = select(User).where(User.firebase_uid == firebase_uid)
+    # Look up by firebase_uid (reusing the column for Auth0 sub)
+    stmt = select(User).where(User.firebase_uid == auth0_sub)
     user = (await db.execute(stmt)).scalar_one_or_none()
 
     if not user:
         # Check if an email-only user exists (legacy)
-        stmt2 = select(User).where(User.email == email)
-        user = (await db.execute(stmt2)).scalar_one_or_none()
+        if email:
+            stmt2 = select(User).where(User.email == email)
+            user = (await db.execute(stmt2)).scalar_one_or_none()
         if user:
-            user.firebase_uid = firebase_uid
+            user.firebase_uid = auth0_sub
             if picture:
                 user.profile_picture_url = picture
         else:
             user = User(
-                firebase_uid=firebase_uid,
+                firebase_uid=auth0_sub,
                 name=name,
                 email=email,
                 profile_picture_url=picture,
@@ -89,6 +92,17 @@ async def google_sign_in(
 
     token = create_access_token(user.id, user.email)
     return AuthResponse(access_token=token, user=UserResponse.model_validate(user))
+
+
+# Backward-compatible alias so Flutter client (/api/auth/google) still works
+@router.post("/google", response_model=AuthResponse, include_in_schema=False)
+@limiter.limit("20/minute")
+async def google_sign_in_compat(
+    request: Request,
+    body: AuthTokenRequest = Body(...),
+    db: AsyncSession = Depends(get_db),
+) -> AuthResponse:
+    return await auth0_login(request=request, body=body, db=db)
 
 
 # ──────────────────────────────────────────────

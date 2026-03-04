@@ -18,7 +18,7 @@ Smart Shiksha uses Retrieval-Augmented Generation (RAG) to deliver personalized,
 | **Competitive Exam Prep** | Mock tests for JEE Mains, JEE Advanced, NEET, and Board Exams |
 | **AI Tutor Chat** | Conversational tutoring on any academic topic |
 | **Offline Revision** | Lessons cached locally via SQLite for offline access (desktop/mobile) |
-| **Google Sign-In** | Firebase Authentication with JWT-secured API |
+| **Google Sign-In** | Auth0 Authentication with JWT-secured API |
 | **Web Portal** | Lightweight vanilla JS frontend for quick browser-based access |
 
 ---
@@ -40,7 +40,7 @@ Smart Shiksha uses Retrieval-Augmented Generation (RAG) to deliver personalized,
 │                  FastAPI Backend                         │
 │  ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌───────────┐  │
 │  │  Auth    │ │ Lessons  │ │  Quiz     │ │Competitive│  │
-│  │ (Firebase│ │ (RAG)    │ │ Generator │ │ Mock Tests│  │
+│  │ (Auth0  │ │ (RAG)    │ │ Generator │ │ Mock Tests│  │
 │  │  + JWT)  │ │          │ │           │ │           │  │
 │  └──────────┘ └──────────┘ └───────────┘ └───────────┘  │
 │  ┌──────────┐ ┌──────────┐ ┌───────────┐                │
@@ -54,7 +54,7 @@ Smart Shiksha uses Retrieval-Augmented Generation (RAG) to deliver personalized,
 │  SQLite / Postgres │  │    External APIs                │
 │  (10 tables)       │  │  • Groq (Llama 3.3 70B)        │
 │                    │  │  • Serper (Google Search)       │
-│                    │  │  • Firebase Auth                │
+│                    │  │  • Auth0 (Google OAuth)         │
 └────────────────────┘  └────────────────────────────────┘
 ```
 
@@ -75,7 +75,7 @@ smartsiksha/
 │   └── app/
 │       ├── main.py               # App entry point, lifespan, middleware
 │       ├── config.py             # Pydantic settings from .env
-│       ├── auth.py               # Firebase token verification + JWT
+│       ├── auth.py               # Auth0 JWKS token verification + JWT
 │       ├── database.py           # SQLAlchemy async engine + sessions
 │       ├── models.py             # 10 ORM models (User, Lesson, Quiz, etc.)
 │       ├── schemas.py            # Pydantic request/response schemas
@@ -108,7 +108,7 @@ smartsiksha/
 │   ├── index.html                # Single-page app shell
 │   ├── css/style.css             # Mobile-first responsive CSS
 │   ├── js/
-│   │   ├── auth.js               # Firebase Google Sign-In + JWT
+│   │   ├── auth.js               # Auth0 Google Sign-In + JWT
 │   │   ├── app.js                # Main app logic
 │   │   ├── markdown.js           # Secure Markdown → HTML renderer
 │   │   └── i18n.js               # Client-side internationalization
@@ -173,7 +173,8 @@ flutter run -d chrome --web-port 5500
 | `GROQ_MODEL` | No | LLM model name (default: `llama-3.3-70b-versatile`) |
 | `SERPER_API_KEY` | Yes | API key from [serper.dev](https://serper.dev) |
 | `DATABASE_URL` | No | SQLAlchemy URL (default: local SQLite) |
-| `FIREBASE_PROJECT_ID` | No | Firebase project ID for Google Sign-In |
+| `AUTH0_DOMAIN` | Yes | Auth0 tenant domain (e.g. `xxx.us.auth0.com`) |
+| `AUTH0_CLIENT_ID` | Yes | Auth0 SPA application client ID |
 | `JWT_SECRET_KEY` | Yes | Random secret for JWT signing — generate with `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
 | `JWT_EXPIRE_MINUTES` | No | Token lifetime in minutes (default: 60) |
 | `DEBUG` | No | Enable dev-mode auth bypass (default: false) |
@@ -187,7 +188,7 @@ flutter run -d chrome --web-port 5500
 |--------|----------|------|-------------|
 | `GET` | `/api/health` | — | Health check |
 | `GET` | `/api/languages` | — | List supported languages |
-| `POST` | `/api/auth/google` | — | Google Sign-In (Firebase ID token → JWT) |
+| `POST` | `/api/auth/login` | — | Auth0 Sign-In (ID token → JWT) |
 | `GET` | `/api/auth/me` | JWT | Current user profile |
 | `POST` | `/api/auth/onboarding` | JWT | Complete curriculum onboarding |
 | `PATCH` | `/api/auth/profile` | JWT | Update profile fields |
@@ -207,7 +208,7 @@ Full interactive docs: **http://localhost:8001/docs**
 
 ## 🛡️ Security
 
-- **Authentication:** Firebase Google Sign-In → backend-issued JWT (HS256, 60-min expiry)
+- **Authentication:** Auth0 Google Sign-In (RS256 ID token verified via JWKS) → backend-issued JWT (HS256, 60-min expiry)
 - **Authorization:** All user-data endpoints enforce ownership checks
 - **Rate limiting:** slowapi — 10 req/min for AI generation, 30 req/min default
 - **Input validation:** Pydantic schemas on all request bodies
@@ -225,7 +226,7 @@ Full interactive docs: **http://localhost:8001/docs**
 | **Database** | SQLite (dev) / PostgreSQL (prod) |
 | **AI / LLM** | Groq Cloud — Llama 3.3 70B Versatile |
 | **Search** | Serper API (Google Search) |
-| **Auth** | Firebase Authentication · python-jose JWT |
+| **Auth** | Auth0 (JWKS / RS256) · python-jose JWT |
 | **Flutter App** | Flutter 3.22+ · Dart · Provider · sqflite |
 | **Web Portal** | Vanilla JS · Custom Markdown renderer · i18n |
 | **Platforms** | Windows · Web · Android · iOS |

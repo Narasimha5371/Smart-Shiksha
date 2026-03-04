@@ -1,16 +1,46 @@
-# smart_shiksha
+# Smart Shiksha — Flutter App
 
-A new Flutter project.
+Cross-platform Flutter client for the Smart Shiksha AI-powered learning platform.
 
-## Getting Started
+## Platforms
 
-This project is a starting point for a Flutter application.
+- **Windows** (desktop) — primary development target
+- **Web** (Chrome) — via Flutter web
+- **Android / iOS** — mobile builds
 
-A few resources to get you started if this is your first Flutter project:
+## Quick Start
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```powershell
+# Install dependencies
+flutter pub get
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Run on Windows desktop
+$env:CL = "/FS"
+New-Item -ItemType Directory -Path "build\native_assets\windows" -Force | Out-Null
+flutter run -d windows
+
+# Run on Chrome
+flutter run -d chrome --web-port 5500
+```
+
+## Architecture
+
+- **State Management**: Provider (ChangeNotifier)
+- **Auth**: Auth0 (Google OAuth) via backend JWT — dev-mode email login for desktop
+- **Storage**: sqflite for offline lesson caching (desktop/mobile), no-op stub on web
+- **Networking**: http package → FastAPI backend at `localhost:8001`
+- **i18n**: Flutter ARB localization (English, Hindi, Kannada, Telugu, Tamil)
+
+## Key Directories
+
+| Path | Description |
+|------|-------------|
+| `lib/core/` | API client, constants, theme, platform checks |
+| `lib/models/` | Dart data models |
+| `lib/screens/` | All UI screens |
+| `lib/services/` | Auth, API, and local DB services |
+| `lib/l10n/` | Localization ARB files |
+
+## Backend Requirement
+
+The app requires the FastAPI backend running on port **8001**. See the root [HOW_TO_RUN.md](../HOW_TO_RUN.md) for setup instructions.

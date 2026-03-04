@@ -30,7 +30,7 @@ smartsiksha/
 │   │   ├── database.py       # SQLAlchemy async engine
 │   │   ├── models.py         # ORM models (10 tables)
 │   │   ├── schemas.py        # Pydantic request/response schemas
-│   │   ├── auth.py           # JWT + Firebase auth
+│   │   ├── auth.py           # JWT + Auth0 auth (JWKS/RS256)
 │   │   ├── routers/          # API route handlers
 │   │   └── services/         # AI generation, syllabus seeding
 │   ├── requirements.txt
@@ -62,8 +62,9 @@ SERPER_API_KEY="your-serper-api-key"
 DATABASE_URL="sqlite+aiosqlite:///./smartsiksha.db"
 DEBUG=false
 
-# Firebase (only needed for Google Sign-In in production)
-FIREBASE_PROJECT_ID="smart-shiksha"
+# Auth0 (Authentication — get credentials at https://auth0.com)
+AUTH0_DOMAIN="your-auth0-domain.us.auth0.com"
+AUTH0_CLIENT_ID="your-auth0-client-id"
 JWT_SECRET_KEY="change-me-to-a-random-secret-in-production"
 JWT_ALGORITHM="HS256"
 JWT_EXPIRE_MINUTES=10080
@@ -350,7 +351,7 @@ Full interactive docs available at **http://localhost:8001/docs** when the backe
 | Database | SQLite (dev) / PostgreSQL (prod) via SQLAlchemy Async |
 | LLM | Groq Cloud — Llama 3.3 70B Versatile |
 | Web Search | Serper API (Google Search) |
-| Auth | Firebase Auth + JWT (HS256) |
+| Auth | Auth0 (JWKS/RS256) + JWT (HS256) |
 | Frontend | Flutter 3.22+ (Dart) |
 | State Management | Provider (ChangeNotifier) |
 | Platforms | Windows, Web, Android, iOS |

@@ -19,8 +19,8 @@ LanguageCode = Literal["en", "hi", "kn", "te", "ta"]
 #  Auth
 # ──────────────────────────────────────────────
 
-class GoogleAuthRequest(BaseModel):
-    """Client sends the Firebase ID token after Google Sign-In."""
+class AuthTokenRequest(BaseModel):
+    """Client sends the Auth0 ID token after sign-in."""
     id_token: str = Field(..., min_length=10)
 
 
