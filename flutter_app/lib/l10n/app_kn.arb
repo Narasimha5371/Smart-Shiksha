@@ -1,0 +1,19 @@
+{
+    "@@locale": "kn",
+    "appTitle": "ಸ್ಮಾರ್ಟ್ ಶಿಕ್ಷಾ",
+    "tagline": "ಪ್ರತಿ ವಿದ್ಯಾರ್ಥಿಗೆ AI-ಚಾಲಿತ ಕಲಿಕೆ",
+    "selectLanguage": "ಭಾಷೆ",
+    "askHeading": "ಪ್ರಶ್ನೆ ಕೇಳಿ",
+    "questionPlaceholder": "ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ…",
+    "askButton": "ಪಾಠ ಪಡೆಯಿರಿ",
+    "loading": "ನಿಮ್ಮ ಪಾಠವನ್ನು ತಯಾರಿಸಲಾಗುತ್ತಿದೆ…",
+    "lessonHeading": "ನಿಮ್ಮ ಪಾಠ",
+    "saveLesson": "ಪಾಠ ಉಳಿಸಿ",
+    "lessonSaved": "ಉಳಿಸಲಾಗಿದೆ!",
+    "sourcesHeading": "ಮೂಲಗಳು",
+    "savedHeading": "ಉಳಿಸಿದ ಪಾಠಗಳು",
+    "noSavedLessons": "ಇನ್ನೂ ಯಾವುದೇ ಉಳಿಸಿದ ಪಾಠಗಳಿಲ್ಲ. ಪ್ರಾರಂಭಿಸಲು ಒಂದು ಪ್ರಶ್ನೆ ಕೇಳಿ!",
+    "footerText": "ಎಲ್ಲರಿಗೂ ಶಿಕ್ಷಣ",
+    "settings": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+    "errorGeneric": "ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+}

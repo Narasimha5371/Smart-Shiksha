@@ -1,0 +1,52 @@
+name: smart_shiksha
+description: AI-powered educational app for rural India — cross-platform.
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Localization
+  intl: ^0.20.2
+
+  # Networking
+  http: ^1.2.0
+
+  # Markdown rendering
+  flutter_markdown: ^0.7.0
+
+  # Offline storage
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0          # Desktop support
+  sqlite3_flutter_libs: ^0.5.0        # Bundles native sqlite3 for all platforms
+  path_provider: ^2.1.0
+  path: ^1.9.0
+
+  # State management
+  provider: ^6.1.0
+
+  # Utilities
+  shared_preferences: ^2.3.0
+  url_launcher: ^6.3.2
+
+  # Flashcard UI
+  flip_card: ^0.7.0
+
+  # Image caching
+  cached_network_image: ^3.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true                        # enables gen-l10n

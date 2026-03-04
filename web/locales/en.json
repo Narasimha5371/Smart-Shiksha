@@ -1,0 +1,18 @@
+{
+    "tagline": "AI-powered learning for every student",
+    "selectLanguage": "Language",
+    "askHeading": "Ask a Question",
+    "questionPlaceholder": "Type your question here… e.g. What is photosynthesis?",
+    "askButton": "Get Lesson",
+    "loading": "Generating your lesson…",
+    "lessonHeading": "Your Lesson",
+    "saveLesson": "💾 Save Lesson",
+    "lessonSaved": "✅ Saved!",
+    "sourcesHeading": "Sources",
+    "savedHeading": "Saved Lessons",
+    "noSavedLessons": "No saved lessons yet. Ask a question to get started!",
+    "footerText": "Education for All",
+    "signIn": "Sign in with Google",
+    "signOut": "Sign Out",
+    "signInPrompt": "Sign in to start learning with AI-powered lessons"
+}

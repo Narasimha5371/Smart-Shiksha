@@ -1,0 +1,18 @@
+{
+    "tagline": "हर छात्र के लिए AI-संचालित शिक्षा",
+    "selectLanguage": "भाषा",
+    "askHeading": "सवाल पूछें",
+    "questionPlaceholder": "अपना सवाल यहाँ लिखें… जैसे: प्रकाश संश्लेषण क्या है?",
+    "askButton": "पाठ प्राप्त करें",
+    "loading": "आपका पाठ तैयार हो रहा है…",
+    "lessonHeading": "आपका पाठ",
+    "saveLesson": "💾 पाठ सहेजें",
+    "lessonSaved": "✅ सहेजा गया!",
+    "sourcesHeading": "स्रोत",
+    "savedHeading": "सहेजे गए पाठ",
+    "noSavedLessons": "अभी कोई सहेजा गया पाठ नहीं है। शुरू करने के लिए एक सवाल पूछें!",
+    "footerText": "सबके लिए शिक्षा",
+    "signIn": "Google से साइन इन करें",
+    "signOut": "साइन आउट",
+    "signInPrompt": "AI-संचालित पाठों के साथ सीखना शुरू करने के लिए साइन इन करें"
+}

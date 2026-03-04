@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Smart Shiksha – Free AI-powered education for every student" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' http://localhost:8000 http://localhost:8001 http://127.0.0.1:8000 http://127.0.0.1:8001 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; font-src 'self'; frame-src https://accounts.google.com https://smart-shiksha.firebaseapp.com;" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Smart Shiksha</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+    <!-- ─── Header ─────────────────────────────── -->
+    <header class="header">
+        <div class="header__brand">
+            <h1 class="header__title">📚 Smart Shiksha</h1>
+            <p class="header__tagline" data-i18n="tagline">AI-powered learning for every student</p>
+        </div>
+        <div class="header__controls">
+            <label for="lang-select" class="sr-only" data-i18n="selectLanguage">Language</label>
+            <select id="lang-select" class="lang-selector" aria-label="Select Language">
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="kn">ಕನ್ನಡ</option>
+                <option value="te">తెలుగు</option>
+                <option value="ta">தமிழ்</option>
+            </select>
+
+            <!-- Auth controls -->
+            <button id="sign-in-btn" class="btn btn--google" data-i18n="signIn">
+                Sign in with Google
+            </button>
+            <div id="user-info" class="user-info hidden">
+                <img id="user-avatar" class="user-info__avatar" src="" alt="" />
+                <span id="user-name" class="user-info__name"></span>
+                <button id="sign-out-btn" class="btn btn--small btn--outline" data-i18n="signOut">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ─── Main Content ───────────────────────── -->
+    <main class="main">
+
+        <!-- Login prompt (shown when not signed in) -->
+        <section id="login-prompt" class="login-prompt" aria-labelledby="login-heading">
+            <div class="login-prompt__card">
+                <h2 id="login-heading">📚 Welcome to Smart Shiksha</h2>
+                <p data-i18n="signInPrompt">Sign in to start learning with AI-powered lessons</p>
+                <button id="sign-in-btn-main" class="btn btn--google btn--lg">
+                    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.04 24.04 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    <span data-i18n="signIn">Sign in with Google</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- App content (hidden until signed in) -->
+        <div id="app-content" class="hidden">
+        <section class="ask-section" aria-labelledby="ask-heading">
+            <h2 id="ask-heading" data-i18n="askHeading">Ask a Question</h2>
+            <form id="ask-form" class="ask-form" autocomplete="off">
+                <textarea
+                    id="question-input"
+                    class="ask-form__input"
+                    rows="3"
+                    maxlength="1000"
+                    required
+                    data-i18n-placeholder="questionPlaceholder"
+                    placeholder="Type your question here… e.g. What is photosynthesis?"
+                ></textarea>
+                <button type="submit" id="ask-btn" class="btn btn--primary" data-i18n="askButton">
+                    Get Lesson
+                </button>
+            </form>
+            <div id="loading" class="loading hidden" aria-live="polite">
+                <div class="spinner"></div>
+                <span data-i18n="loading">Generating your lesson…</span>
+            </div>
+            <div id="error-msg" class="error hidden" role="alert"></div>
+        </section>
+
+        <!-- Lesson display -->
+        <section id="lesson-section" class="lesson-section hidden" aria-labelledby="lesson-heading">
+            <div class="lesson-header">
+                <h2 id="lesson-heading" data-i18n="lessonHeading">Your Lesson</h2>
+                <button id="save-btn" class="btn btn--outline" data-i18n="saveLesson">
+                    💾 Save Lesson
+                </button>
+            </div>
+            <article id="lesson-content" class="lesson-content markdown-body"></article>
+            <div id="lesson-sources" class="lesson-sources hidden">
+                <h3 data-i18n="sourcesHeading">Sources</h3>
+                <ul id="sources-list"></ul>
+            </div>
+        </section>
+
+        <!-- Saved lessons -->
+        <section id="saved-section" class="saved-section" aria-labelledby="saved-heading">
+            <h2 id="saved-heading" data-i18n="savedHeading">Saved Lessons</h2>
+            <div id="saved-list" class="saved-list">
+                <p class="saved-list__empty" data-i18n="noSavedLessons">
+                    No saved lessons yet. Ask a question to get started!
+                </p>
+            </div>
+        </section>
+
+        </div><!-- /app-content -->
+
+    </main>
+
+    <!-- ─── Footer ─────────────────────────────── -->
+    <footer class="footer">
+        <p>&copy; 2026 Smart Shiksha &mdash; <span data-i18n="footerText">Education for All</span></p>
+    </footer>
+
+    <!-- Firebase SDK (compat for vanilla JS) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+    <!-- Scripts (order matters) -->
+    <script src="js/markdown.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

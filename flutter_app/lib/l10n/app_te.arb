@@ -1,0 +1,19 @@
+{
+    "@@locale": "te",
+    "appTitle": "స్మార్ట్ శిక్ష",
+    "tagline": "ప్రతి విద్యార్థికి AI-ఆధారిత విద్య",
+    "selectLanguage": "భాష",
+    "askHeading": "ప్రశ్న అడగండి",
+    "questionPlaceholder": "మీ ప్రశ్నను ఇక్కడ టైప్ చేయండి…",
+    "askButton": "పాఠం పొందండి",
+    "loading": "మీ పాఠం తయారవుతోంది…",
+    "lessonHeading": "మీ పాఠం",
+    "saveLesson": "పాఠం సేవ్ చేయండి",
+    "lessonSaved": "సేవ్ చేయబడింది!",
+    "sourcesHeading": "మూలాలు",
+    "savedHeading": "సేవ్ చేసిన పాఠాలు",
+    "noSavedLessons": "ఇంకా సేవ్ చేసిన పాఠాలు లేవు. ప్రారంభించడానికి ఒక ప్రశ్న అడగండి!",
+    "footerText": "అందరికీ విద్య",
+    "settings": "సెట్టింగ్‌లు",
+    "errorGeneric": "ఏదో తప్పు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి."
+}
