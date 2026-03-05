@@ -483,9 +483,9 @@
         var file = e.target.files && e.target.files[0];
         if (!file) return;
 
-        // Validate file size (40 MB max)
-        if (file.size > 40 * 1024 * 1024) {
-            alert("File too large. Maximum size is 40 MB.");
+        // Validate file size (100 MB max)
+        if (file.size > 100 * 1024 * 1024) {
+            alert("File too large. Maximum size is 100 MB.");
             tutorFileInput.value = "";
             return;
         }

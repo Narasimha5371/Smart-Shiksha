@@ -35,10 +35,10 @@ router = APIRouter(prefix="/api", tags=["lessons"])
 limiter = Limiter(key_func=get_remote_address)
 logger = logging.getLogger(__name__)
 
-# Allowed image MIME types and max file size (40 MB)
+# Allowed image MIME types and max file size (100 MB)
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 ALLOWED_TEXT_TYPES = {"text/plain", "application/pdf"}
-MAX_FILE_SIZE = 40 * 1024 * 1024  # 40 MB
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
 
 
 # ──────────────────────────────────────────────
@@ -102,7 +102,7 @@ async def ask_with_file(
     if len(file_data) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File too large ({len(file_data) / 1024 / 1024:.1f} MB). Max: 40 MB.",
+            detail=f"File too large ({len(file_data) / 1024 / 1024:.1f} MB). Max: 100 MB.",
         )
 
     image_base64 = None
