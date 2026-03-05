@@ -18,8 +18,8 @@ Smart Shiksha uses Retrieval-Augmented Generation (RAG) to deliver personalized,
 | **Competitive Exam Prep** | Mock tests for JEE Mains, JEE Advanced, NEET, and Board Exams |
 | **AI Tutor Chat** | Conversational tutoring on any academic topic |
 | **Offline Revision** | Lessons cached locally via SQLite for offline access (desktop/mobile) |
-| **Google Sign-In** | Auth0 Authentication with JWT-secured API |
-| **Web Portal** | Lightweight vanilla JS frontend for quick browser-based access |
+| **Dev-Mode Login** | Email-based authentication for development; Auth0 Google Sign-In for production |
+| **Web Portal** | Material 3 multi-view SPA with dashboard, AI tutor chat, lesson viewer, and dark mode — matches the Flutter app UI |
 
 ---
 
@@ -30,8 +30,8 @@ Smart Shiksha uses Retrieval-Augmented Generation (RAG) to deliver personalized,
 │                      Clients                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐ │
 │  │ Flutter App  │  │  Web Portal │  │  REST Clients    │ │
-│  │ (Win/Web/    │  │  (Vanilla   │  │  (Swagger /      │ │
-│  │  Android)    │  │   JS)       │  │   Postman)       │ │
+│  │ (Windows/    │  │  (Material  │  │  (Swagger /      │ │
+│  │  Android)    │  │   3 SPA)    │  │   Postman)       │ │
 │  └──────┬──────┘  └──────┬──────┘  └────────┬─────────┘ │
 └─────────┼────────────────┼───────────────────┼───────────┘
           │                │                   │
@@ -104,12 +104,12 @@ smartsiksha/
 │       ├── services/             # Auth, API, DB, localization services
 │       └── screens/              # 12 screens (login → dashboard → lessons → quiz)
 │
-├── web/                          # Lightweight web portal
-│   ├── index.html                # Single-page app shell
-│   ├── css/style.css             # Mobile-first responsive CSS
+├── web/                          # Material 3 web portal (SPA)
+│   ├── index.html                # Multi-view SPA: login, dashboard, tutor, lessons
+│   ├── css/style.css             # Material 3 CSS with dark mode & responsive grid
 │   ├── js/
-│   │   ├── auth.js               # Auth0 Google Sign-In + JWT
-│   │   ├── app.js                # Main app logic
+│   │   ├── auth.js               # Auth0 + dev-mode email login + JWT
+│   │   ├── app.js                # SPA navigation stack, dashboard, AI chat
 │   │   ├── markdown.js           # Secure Markdown → HTML renderer
 │   │   └── i18n.js               # Client-side internationalization
 │   └── locales/                  # en, hi, kn, te, ta JSON files
@@ -144,7 +144,12 @@ The database auto-initializes and seeds 30 curricula on first boot. API docs are
 
 ### 3. Run a client
 
-**Web portal** — open `web/index.html` in a browser (via Live Server or any HTTP server on port 5500).
+**Web portal:**
+```bash
+cd web
+python -m http.server 5500
+# Open http://localhost:5500
+```
 
 **Flutter (Windows desktop):**
 ```powershell
@@ -154,12 +159,15 @@ $env:CL = "/FS"
 flutter run -d windows
 ```
 
-**Flutter (Chrome):**
+**Flutter (Android emulator):**
 ```bash
 cd flutter_app
 flutter pub get
-flutter run -d chrome --web-port 5500
+flutter emulators --launch <emulator-name>
+flutter run -d <emulator-id>
 ```
+
+> The Android emulator connects to the backend via `http://10.0.2.2:8001/api`. Internet permission and cleartext traffic are pre-configured.
 
 > See [HOW_TO_RUN.md](HOW_TO_RUN.md) for detailed setup instructions, troubleshooting, and all run options.
 
@@ -208,7 +216,7 @@ Full interactive docs: **http://localhost:8001/docs**
 
 ## 🛡️ Security
 
-- **Authentication:** Auth0 Google Sign-In (RS256 ID token verified via JWKS) → backend-issued JWT (HS256, 60-min expiry)
+- **Authentication:** Auth0 Google Sign-In (RS256 ID token verified via JWKS) → backend-issued JWT (HS256); dev-mode email login available when `DEBUG=true`
 - **Authorization:** All user-data endpoints enforce ownership checks
 - **Rate limiting:** slowapi — 10 req/min for AI generation, 30 req/min default
 - **Input validation:** Pydantic schemas on all request bodies
@@ -228,7 +236,7 @@ Full interactive docs: **http://localhost:8001/docs**
 | **Search** | Serper API (Google Search) |
 | **Auth** | Auth0 (JWKS / RS256) · python-jose JWT |
 | **Flutter App** | Flutter 3.22+ · Dart · Provider · sqflite |
-| **Web Portal** | Vanilla JS · Custom Markdown renderer · i18n |
+| **Web Portal** | Material 3 SPA · Vanilla JS · Custom Markdown renderer · i18n · Dark mode |
 | **Platforms** | Windows · Web · Android · iOS |
 
 ---

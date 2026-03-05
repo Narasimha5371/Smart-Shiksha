@@ -201,23 +201,55 @@ Run it directly:
 Start-Process "flutter_app\build\windows\x64\runner\Release\smart_shiksha.exe"
 ```
 
-### Option D: Android
+### Option D: Android (Emulator or Physical Device)
+
+**Prerequisites**: Android SDK, an Android emulator (e.g., Pixel 9 Pro XL) or a connected physical device.
 
 ```powershell
 cd flutter_app
 flutter pub get
-flutter run -d <device-id>
+
+# List available emulators
+flutter emulators
+
+# Launch an emulator (example: Pixel_9_Pro_XL)
+flutter emulators --launch Pixel_9_Pro_XL
+
+# Wait ~30 seconds for the emulator to boot, then:
+flutter run -d emulator-5554
 ```
 
-> For Android emulators, the app connects to the backend via `http://10.0.2.2:8001/api` (the emulator's alias for the host machine's localhost).
+> **First build** takes 10–20 minutes (downloads NDK, Android SDK Platform, CMake, and all Gradle dependencies). Subsequent builds take under a minute.
+
+> **Network configuration**: The Android emulator uses `10.0.2.2` to reach the host machine's `localhost`. This is pre-configured in `lib/core/constants.dart`. Internet permission and cleartext traffic (`android:usesCleartextTraffic="true"`) are already set in `AndroidManifest.xml`.
+
+> **To find your device ID**:
+> ```powershell
+> flutter devices
+> ```
 
 ---
 
-## Step 4 — Using the App
+## Step 4 — Run the Web Portal
+
+The web portal is a standalone Material 3 SPA (vanilla JS) that mirrors the Flutter app's design. It provides login, a 6-card dashboard, AI tutor chat, saved lessons, and dark mode.
+
+```powershell
+cd web
+python -m http.server 5500
+```
+
+Open **http://localhost:5500** in your browser. The portal connects to the same backend at `http://localhost:8001/api`.
+
+> **Dev-mode login**: When `DEBUG=true` in `.env`, enter any name and email on the login screen to sign in without Auth0.
+
+---
+
+## Step 5 — Using the App
 
 ### First-Time Setup (Onboarding)
 
-1. **Sign In**: Use Google Sign-In (production) or the dev-mode token-based login.
+1. **Sign In**: Use Google Sign-In (production) or the dev-mode email login (when `DEBUG=true`).
 2. **Select Curriculum**: Choose from 30 boards (CBSE, ICSE, AP Board, Karnataka Board, etc.).
 3. **Select Class**: Pick a grade from 8 to 12.
 4. **Select Stream** *(classes 11–12 only)*: Science, Commerce, or Arts.
@@ -238,11 +270,11 @@ flutter run -d <device-id>
 
 ## Quick-Start Commands (Copy-Paste)
 
-Open **two terminals** and run:
+Open **three terminals** and run:
 
 **Terminal 1 — Backend:**
 ```powershell
-cd c:\Users\naras\pc\Videos\project\smartsiksha\backend
+cd backend
 pip install -r requirements.txt
 python -c "import asyncio; from app.database import init_db; asyncio.run(init_db())"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
@@ -250,18 +282,27 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
 
 **Terminal 2 — Flutter (Windows):**
 ```powershell
-cd c:\Users\naras\pc\Videos\project\smartsiksha\flutter_app
+cd flutter_app
 flutter pub get
 $env:CL = "/FS"
 New-Item -ItemType Directory -Path "build\native_assets\windows" -Force | Out-Null
 flutter run -d windows
 ```
 
-**Terminal 2 — Flutter (Web, alternative):**
+**Terminal 2 — Flutter (Android, alternative):**
 ```powershell
-cd c:\Users\naras\pc\Videos\project\smartsiksha\flutter_app
+cd flutter_app
 flutter pub get
-flutter run -d chrome --web-port 5500
+flutter emulators --launch Pixel_9_Pro_XL
+Start-Sleep -Seconds 30
+flutter run -d emulator-5554
+```
+
+**Terminal 3 — Web Portal:**
+```powershell
+cd web
+python -m http.server 5500
+# Open http://localhost:5500
 ```
 
 ---
@@ -314,8 +355,24 @@ flutter_app\build\windows\x64\_deps\sqlite3-subbuild\sqlite3-populate-prefix\src
 ### App can't connect to backend
 
 - Ensure the backend is running on **port 8001** (check terminal output).
-- The Flutter app expects the backend at `http://localhost:8001/api` for desktop/web.
-- For Android emulators, it uses `http://10.0.2.2:8001/api`.
+- The Flutter app expects the backend at `http://localhost:8001/api` for desktop.
+- For Android emulators, it uses `http://10.0.2.2:8001/api` (auto-configured).
+- The web portal connects to `http://localhost:8001/api`.
+
+### Android first build is very slow
+
+The first Gradle build downloads NDK, Android SDK Platform 35, CMake 3.22.1, and all Gradle dependencies. This can take 10–20 minutes. Subsequent builds use cached artifacts and complete in under a minute.
+
+### Android emulator not detected
+
+```powershell
+# List emulators
+flutter emulators
+# Launch one
+flutter emulators --launch <emulator-name>
+# Wait for boot, then check
+flutter devices
+```
 
 ---
 
@@ -325,18 +382,21 @@ flutter_app\build\windows\x64\_deps\sqlite3-subbuild\sqlite3-populate-prefix\src
 |--------|----------|-------------|
 | GET | `/api/health` | Health check |
 | GET | `/api/languages` | List supported languages |
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login (returns JWT) |
+| POST | `/api/auth/login` | Auth0 ID token → JWT login |
+| POST | `/api/auth/google` | Backward-compat alias for /login |
+| POST | `/api/auth/onboarding` | Complete curriculum onboarding |
+| GET | `/api/auth/me` | Get current user profile |
+| PATCH | `/api/auth/profile` | Update profile fields |
+| POST | `/api/ask` | Generate AI lesson (RAG pipeline) |
+| POST | `/api/lessons/save` | Save a lesson |
+| GET | `/api/lessons/mine` | Get user’s saved lessons |
 | GET | `/api/syllabus/curricula` | List all 30 curricula |
 | GET | `/api/syllabus/subjects` | List subjects for a curriculum/class |
 | GET | `/api/syllabus/chapters/{subject_id}` | List chapters for a subject |
-| POST | `/api/lessons/generate` | Generate AI lesson (RAG) |
 | POST | `/api/quiz/generate` | Generate quiz questions |
 | GET | `/api/quiz/questions/{chapter_id}` | Get existing quiz questions |
 | POST | `/api/competitive/mock-test/generate` | Generate competitive exam mock test |
 | GET | `/api/competitive/exams` | List competitive exams |
-| GET | `/api/users/me` | Get current user profile |
-| PUT | `/api/users/me` | Update user profile |
 | GET | `/api/progress/` | Get user progress |
 
 Full interactive docs available at **http://localhost:8001/docs** when the backend is running.
@@ -351,7 +411,7 @@ Full interactive docs available at **http://localhost:8001/docs** when the backe
 | Database | SQLite (dev) / PostgreSQL (prod) via SQLAlchemy Async |
 | LLM | Groq Cloud — Llama 3.3 70B Versatile |
 | Web Search | Serper API (Google Search) |
-| Auth | Auth0 (JWKS/RS256) + JWT (HS256) |
-| Frontend | Flutter 3.22+ (Dart) |
-| State Management | Provider (ChangeNotifier) |
-| Platforms | Windows, Web, Android, iOS |
+| Auth | Auth0 (JWKS/RS256) + JWT (HS256) + dev-mode email login |
+| Flutter App | Flutter 3.22+ (Dart) · Provider · sqflite |
+| Web Portal | Material 3 SPA · Vanilla JS · Dark mode · i18n |
+| Platforms | Windows · Android · Web Portal |

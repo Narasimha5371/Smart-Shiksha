@@ -1,83 +1,158 @@
 /**
- * Smart Shiksha — Main application logic (Vanilla JS).
+ * Smart Shiksha — Main SPA app logic.
  *
- * Handles:
- *  - Authentication state ↔ UI visibility
- *  - Language selector ↔ i18n + API parameter
- *  - Question submission → POST /api/ask
- *  - Lesson rendering (Markdown → HTML)
- *  - Save/load lessons via API
+ * Multi-view SPA matching the Flutter app layout:
+ *   Login → Dashboard → AI Tutor / Saved Lessons / Lesson Detail
  */
 (() => {
     "use strict";
 
-    // ── Config ────────────────────────────────────
-    const API_BASE = "http://localhost:8000/api";
+    const API_BASE = "http://localhost:8001/api";
 
-    // ── DOM refs ──────────────────────────────────
+    // ── DOM refs: App Bar ──
+    const appBarTitle   = document.getElementById("app-bar-title");
+    const backBtn       = document.getElementById("back-btn");
     const langSelect    = document.getElementById("lang-select");
-    const askForm       = document.getElementById("ask-form");
-    const questionInput = document.getElementById("question-input");
-    const askBtn        = document.getElementById("ask-btn");
-    const loadingEl     = document.getElementById("loading");
-    const errorEl       = document.getElementById("error-msg");
-    const lessonSection = document.getElementById("lesson-section");
-    const lessonContent = document.getElementById("lesson-content");
-    const lessonSources = document.getElementById("lesson-sources");
-    const sourcesList   = document.getElementById("sources-list");
-    const saveBtn       = document.getElementById("save-btn");
-    const savedSection  = document.getElementById("saved-section");
-    const savedList     = document.getElementById("saved-list");
+    const themeToggle   = document.getElementById("theme-toggle");
+    const iconSun       = document.getElementById("icon-sun");
+    const iconMoon      = document.getElementById("icon-moon");
+    const userInfo      = document.getElementById("user-info");
+    const userAvatar    = document.getElementById("user-avatar");
+    const userName      = document.getElementById("user-name");
+    const signOutBtn    = document.getElementById("sign-out-btn");
 
-    // Auth DOM refs
-    const loginPrompt    = document.getElementById("login-prompt");
-    const appContent     = document.getElementById("app-content");
-    const signInBtn      = document.getElementById("sign-in-btn");
-    const signInBtnMain  = document.getElementById("sign-in-btn-main");
-    const signOutBtn     = document.getElementById("sign-out-btn");
-    const userInfo       = document.getElementById("user-info");
-    const userAvatar     = document.getElementById("user-avatar");
-    const userName       = document.getElementById("user-name");
+    // ── DOM refs: Views ──
+    const loginView      = document.getElementById("login-view");
+    const dashboardView  = document.getElementById("dashboard-view");
+    const tutorView      = document.getElementById("tutor-view");
+    const savedView      = document.getElementById("saved-view");
+    const lessonView     = document.getElementById("lesson-view");
+    const comingSoonView = document.getElementById("coming-soon-view");
 
-    // ── State ─────────────────────────────────────
+    // ── DOM refs: Login ──
+    const loginForm   = document.getElementById("login-form");
+    const loginName   = document.getElementById("login-name");
+    const loginEmail  = document.getElementById("login-email");
+    const loginError  = document.getElementById("login-error");
+    const loginBtn    = document.getElementById("login-btn");
+
+    // ── DOM refs: Dashboard ──
+    const greetingName = document.getElementById("greeting-name");
+    const greetingInfo = document.getElementById("greeting-info");
+
+    // ── DOM refs: Tutor ──
+    const tutorChat  = document.getElementById("tutor-chat");
+    const tutorEmpty = document.getElementById("tutor-empty");
+    const tutorForm  = document.getElementById("tutor-form");
+    const tutorInput = document.getElementById("tutor-input");
+    const tutorSend  = document.getElementById("tutor-send");
+
+    // ── DOM refs: Saved ──
+    const savedList = document.getElementById("saved-list");
+
+    // ── DOM refs: Lesson ──
+    const lessonContent  = document.getElementById("lesson-content");
+    const lessonSources  = document.getElementById("lesson-sources");
+    const sourcesList    = document.getElementById("sources-list");
+    const saveLessonBtn  = document.getElementById("save-lesson-btn");
+
+    // ── DOM refs: Coming soon ──
+    const comingSoonTitle = document.getElementById("coming-soon-title");
+    const comingSoonBack  = document.getElementById("coming-soon-back");
+
+    // ── State ──
     let currentLanguage = "en";
+    let currentView = "login";
     let lastLesson = null;
+    let isDark = false;
+    const navStack = [];
     const savedLessonCache = new Map();
 
-    // ── Init ──────────────────────────────────────
+    const views = {
+        login:        { el: loginView,      title: "Smart Shiksha" },
+        dashboard:    { el: dashboardView,  title: "Smart Shiksha" },
+        tutor:        { el: tutorView,      title: "AI Tutor" },
+        saved:        { el: savedView,      title: "Saved Lessons" },
+        lesson:       { el: lessonView,     title: "Lesson" },
+        "coming-soon":{ el: comingSoonView, title: "Coming Soon" },
+    };
+
+    // ═══════════════════════════════════════════
+    // VIEW MANAGEMENT
+    // ═══════════════════════════════════════════
+
+    function showView(name, opts) {
+        opts = opts || {};
+        Object.values(views).forEach(function(v) { v.el.classList.add("hidden"); });
+        currentView = name;
+        var view = views[name];
+        if (!view) return;
+        view.el.classList.remove("hidden");
+        appBarTitle.textContent = opts.title || view.title;
+        backBtn.classList.toggle("hidden", name === "login" || name === "dashboard");
+    }
+
+    function navigateTo(name, opts) {
+        if (currentView !== "login") navStack.push(currentView);
+        showView(name, opts);
+    }
+
+    function navigateBack() {
+        var prev = navStack.pop();
+        showView(prev || "dashboard");
+    }
+
+    // ═══════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════
+
     async function init() {
-        // Restore language preference
-        const saved = localStorage.getItem("ss_lang");
-        if (saved) {
-            currentLanguage = saved;
-            langSelect.value = saved;
-        }
+        // Restore language
+        var savedLang = localStorage.getItem("ss_lang");
+        if (savedLang) { currentLanguage = savedLang; langSelect.value = savedLang; }
 
-        // Initialize i18n
-        await I18n.init(currentLanguage);
+        // Restore theme
+        if (localStorage.getItem("ss_theme") === "dark") toggleTheme(true);
 
-        // Wire up events
+        // Init i18n
+        if (typeof I18n !== "undefined") await I18n.init(currentLanguage);
+
+        // Wire events
         langSelect.addEventListener("change", onLanguageChange);
-        askForm.addEventListener("submit", onAskSubmit);
-        saveBtn.addEventListener("click", onSaveLesson);
-        signInBtn.addEventListener("click", handleSignIn);
-        signInBtnMain.addEventListener("click", handleSignIn);
+        themeToggle.addEventListener("click", function() { toggleTheme(); });
         signOutBtn.addEventListener("click", handleSignOut);
+        loginForm.addEventListener("submit", handleLogin);
+        backBtn.addEventListener("click", navigateBack);
+        comingSoonBack.addEventListener("click", function() { showView("dashboard"); navStack.length = 0; });
 
-        // Initialize auth — pass callback to react to auth state
+        // Dashboard cards
+        document.querySelectorAll(".dash-card").forEach(function(card) {
+            card.addEventListener("click", function() { onDashCardClick(card.dataset.view); });
+        });
+
+        // Tutor
+        tutorForm.addEventListener("submit", onTutorSubmit);
+        document.querySelectorAll(".chip[data-q]").forEach(function(chip) {
+            chip.addEventListener("click", function() {
+                tutorInput.value = chip.dataset.q;
+                tutorForm.dispatchEvent(new Event("submit"));
+            });
+        });
+
+        // Save lesson
+        saveLessonBtn.addEventListener("click", onSaveLesson);
+
+        // Init auth
         SmartAuth.init(onAuthStateChanged);
     }
 
-    // ── Auth State Change ─────────────────────────
+    // ═══════════════════════════════════════════
+    // AUTH
+    // ═══════════════════════════════════════════
+
     function onAuthStateChanged(user) {
         if (user) {
-            // Signed in
-            loginPrompt.classList.add("hidden");
-            appContent.classList.remove("hidden");
-            signInBtn.classList.add("hidden");
             userInfo.classList.remove("hidden");
-
-            // Display user info
             userName.textContent = user.name || user.email || "Student";
             if (user.profile_picture_url) {
                 userAvatar.src = user.profile_picture_url;
@@ -86,26 +161,36 @@
             } else {
                 userAvatar.classList.add("hidden");
             }
-
-            // Load saved lessons
-            loadSavedLessons();
+            greetingName.textContent = "Hello, " + (user.name || "Student") + "! \uD83D\uDC4B";
+            greetingInfo.textContent = "Ready to learn something new today?";
+            navStack.length = 0;
+            showView("dashboard");
         } else {
-            // Signed out
-            loginPrompt.classList.remove("hidden");
-            appContent.classList.add("hidden");
-            signInBtn.classList.remove("hidden");
             userInfo.classList.add("hidden");
             userAvatar.classList.add("hidden");
+            navStack.length = 0;
+            showView("login");
         }
     }
 
-    // ── Sign In / Out ─────────────────────────────
-    async function handleSignIn() {
+    async function handleLogin(e) {
+        e.preventDefault();
+        var name  = loginName.value.trim();
+        var email = loginEmail.value.trim();
+        if (!name || !email) return;
+
+        loginError.classList.add("hidden");
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<span class="bubble__spinner" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px;"></span> Signing in\u2026';
+
         try {
-            hideError();
-            await SmartAuth.signInWithGoogle();
+            await SmartAuth.signInWithEmail(name, email);
         } catch (err) {
-            showError(err.message || "Sign-in failed. Please try again.");
+            loginError.textContent = err.message || "Sign-in failed";
+            loginError.classList.remove("hidden");
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg><span>Sign In</span>';
         }
     }
 
@@ -113,87 +198,189 @@
         await SmartAuth.signOut();
         lastLesson = null;
         savedLessonCache.clear();
-        lessonSection.classList.add("hidden");
+        navStack.length = 0;
+        showView("login");
     }
 
-    // ── Language Change ───────────────────────────
-    async function onLanguageChange() {
-        currentLanguage = langSelect.value;
-        localStorage.setItem("ss_lang", currentLanguage);
-        await I18n.setLocale(currentLanguage);
-    }
+    // ═══════════════════════════════════════════
+    // DASHBOARD
+    // ═══════════════════════════════════════════
 
-    // ── Ask Question ──────────────────────────────
-    async function onAskSubmit(e) {
-        e.preventDefault();
-        const question = questionInput.value.trim();
-        if (!question) return;
-
-        showLoading(true);
-        hideError();
-        lessonSection.classList.add("hidden");
-
-        try {
-            const resp = await fetch(`${API_BASE}/ask`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...SmartAuth.getAuthHeaders(),
-                },
-                body: JSON.stringify({
-                    question,
-                    target_language: currentLanguage,
-                }),
-            });
-
-            if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
-                throw new Error(err.detail || `Server error (${resp.status})`);
-            }
-
-            lastLesson = await resp.json();
-            renderLesson(lastLesson);
-        } catch (err) {
-            showError(err.message);
-        } finally {
-            showLoading(false);
+    function onDashCardClick(view) {
+        switch (view) {
+            case "tutor":
+                navigateTo("tutor");
+                break;
+            case "saved":
+                loadSavedLessons();
+                navigateTo("saved");
+                break;
+            case "lessons-browse":
+                navigateTo("coming-soon", { title: "Lessons" });
+                comingSoonTitle.textContent = "Lessons Browser \u2014 Coming Soon";
+                break;
+            case "quiz":
+                navigateTo("coming-soon", { title: "Quizzes" });
+                comingSoonTitle.textContent = "Quizzes \u2014 Coming Soon";
+                break;
+            case "exam":
+                navigateTo("coming-soon", { title: "Exam Prep" });
+                comingSoonTitle.textContent = "Exam Prep \u2014 Coming Soon";
+                break;
+            case "profile":
+                navigateTo("coming-soon", { title: "Profile" });
+                comingSoonTitle.textContent = "Profile \u2014 Coming Soon";
+                break;
+            default:
+                navigateTo("coming-soon");
+                comingSoonTitle.textContent = "Coming Soon";
         }
     }
 
-    // ── Render Lesson ─────────────────────────────
-    function renderLesson(lesson) {
-        lessonContent.innerHTML = MarkdownRenderer.render(lesson.content);
-        lessonSection.classList.remove("hidden");
+    // ═══════════════════════════════════════════
+    // THEME
+    // ═══════════════════════════════════════════
 
-        // Sources
+    function toggleTheme(forceDark) {
+        isDark = forceDark !== undefined ? forceDark : !isDark;
+        if (isDark) {
+            document.body.setAttribute("data-theme", "dark");
+        } else {
+            document.body.removeAttribute("data-theme");
+        }
+        iconSun.classList.toggle("hidden", isDark);
+        iconMoon.classList.toggle("hidden", !isDark);
+        localStorage.setItem("ss_theme", isDark ? "dark" : "light");
+    }
+
+    // ═══════════════════════════════════════════
+    // LANGUAGE
+    // ═══════════════════════════════════════════
+
+    async function onLanguageChange() {
+        currentLanguage = langSelect.value;
+        localStorage.setItem("ss_lang", currentLanguage);
+        if (typeof I18n !== "undefined") await I18n.setLocale(currentLanguage);
+    }
+
+    // ═══════════════════════════════════════════
+    // AI TUTOR
+    // ═══════════════════════════════════════════
+
+    var bubbleCounter = 0;
+
+    async function onTutorSubmit(e) {
+        e.preventDefault();
+        var question = tutorInput.value.trim();
+        if (!question) return;
+
+        // Hide empty state
+        if (tutorEmpty) tutorEmpty.classList.add("hidden");
+
+        // User bubble
+        addChatBubble(question, true);
+        tutorInput.value = "";
+        tutorSend.disabled = true;
+
+        // Loading bubble
+        var loadingId = addChatBubble("Thinking\u2026", false, { loading: true });
+
+        try {
+            var resp = await fetch(API_BASE + "/ask", {
+                method: "POST",
+                headers: Object.assign({ "Content-Type": "application/json" }, SmartAuth.getAuthHeaders()),
+                body: JSON.stringify({ question: question, target_language: currentLanguage }),
+            });
+
+            if (!resp.ok) {
+                var errData = {};
+                try { errData = await resp.json(); } catch(_) {}
+                throw new Error(errData.detail || "Server error (" + resp.status + ")");
+            }
+
+            lastLesson = await resp.json();
+            removeChatBubble(loadingId);
+
+            // Bot reply — preview
+            var preview = lastLesson.content.substring(0, 250);
+            if (lastLesson.content.length > 250) preview += "\u2026";
+            addChatBubble(preview, false, { lesson: lastLesson });
+
+        } catch (err) {
+            removeChatBubble(loadingId);
+            addChatBubble("\u26A0\uFE0F " + (err.message || "Failed to get response"), false, { error: true });
+        } finally {
+            tutorSend.disabled = false;
+            tutorInput.focus();
+        }
+    }
+
+    function addChatBubble(text, isUser, opts) {
+        opts = opts || {};
+        var id = "bubble-" + (++bubbleCounter);
+        var div = document.createElement("div");
+        div.id = id;
+        div.className = "bubble " + (isUser ? "bubble--user" : "bubble--bot") + (opts.loading ? " bubble--loading" : "");
+
+        if (opts.loading) {
+            div.innerHTML = '<div class="bubble__spinner"></div><span>' + escapeHtml(text) + '</span>';
+        } else if (opts.error) {
+            div.textContent = text;
+            div.style.borderLeft = "3px solid var(--error)";
+        } else {
+            div.textContent = text;
+            if (opts.lesson) {
+                var actions = document.createElement("div");
+                actions.className = "bubble__actions";
+                var btn = document.createElement("button");
+                btn.className = "bubble__view-btn";
+                btn.textContent = "\uD83D\uDCC4 View Full Lesson";
+                btn.addEventListener("click", function() { showLessonDetail(opts.lesson); });
+                actions.appendChild(btn);
+                div.appendChild(actions);
+            }
+        }
+
+        tutorChat.appendChild(div);
+        tutorChat.scrollTop = tutorChat.scrollHeight;
+        return id;
+    }
+
+    function removeChatBubble(id) {
+        var el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    function showLessonDetail(lesson) {
+        lessonContent.innerHTML = (typeof MarkdownRenderer !== "undefined")
+            ? MarkdownRenderer.render(lesson.content)
+            : escapeHtml(lesson.content).replace(/\n/g, "<br>");
+
         if (lesson.sources && lesson.sources.length > 0) {
             sourcesList.innerHTML = lesson.sources
-                .map((url) => `<li><a href="${escapeAttr(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a></li>`)
+                .map(function(url) { return '<li><a href="' + escapeAttr(url) + '" target="_blank" rel="noopener">' + escapeHtml(url) + '</a></li>'; })
                 .join("");
             lessonSources.classList.remove("hidden");
         } else {
             lessonSources.classList.add("hidden");
         }
 
-        // Scroll into view
-        lessonSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        lastLesson = lesson;
+        saveLessonBtn.textContent = "\uD83D\uDCBE Save Lesson";
+        navigateTo("lesson", { title: lesson.topic || "Lesson" });
     }
 
-    // ── Save Lesson ───────────────────────────────
+    // ═══════════════════════════════════════════
+    // SAVE / LOAD LESSONS
+    // ═══════════════════════════════════════════
+
     async function onSaveLesson() {
-        if (!lastLesson) return;
-        if (!SmartAuth.isSignedIn()) {
-            showError("Please sign in to save lessons.");
-            return;
-        }
+        if (!lastLesson || !SmartAuth.isSignedIn()) return;
 
         try {
-            const resp = await fetch(`${API_BASE}/lessons/save`, {
+            var resp = await fetch(API_BASE + "/lessons/save", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...SmartAuth.getAuthHeaders(),
-                },
+                headers: Object.assign({ "Content-Type": "application/json" }, SmartAuth.getAuthHeaders()),
                 body: JSON.stringify({
                     topic: lastLesson.topic,
                     content: lastLesson.content,
@@ -201,82 +388,57 @@
                     source_urls: lastLesson.sources,
                 }),
             });
+            if (!resp.ok) throw new Error("Failed to save");
 
-            if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
-                throw new Error(err.detail || "Failed to save");
-            }
-
-            saveBtn.textContent = I18n.t("lessonSaved") || "✅ Saved!";
-            setTimeout(() => {
-                saveBtn.textContent = I18n.t("saveLesson") || "💾 Save Lesson";
-            }, 2000);
-
-            loadSavedLessons();
+            saveLessonBtn.textContent = "\u2705 Saved!";
+            setTimeout(function() { saveLessonBtn.textContent = "\uD83D\uDCBE Save Lesson"; }, 2000);
         } catch (err) {
-            showError(err.message);
+            saveLessonBtn.textContent = "\u274C Failed";
+            setTimeout(function() { saveLessonBtn.textContent = "\uD83D\uDCBE Save Lesson"; }, 2000);
         }
     }
 
-    // ── Load Saved Lessons ────────────────────────
     async function loadSavedLessons() {
         if (!SmartAuth.isSignedIn()) return;
 
         try {
-            const resp = await fetch(`${API_BASE}/lessons/mine`, {
-                headers: { ...SmartAuth.getAuthHeaders() },
+            var resp = await fetch(API_BASE + "/lessons/mine", {
+                headers: SmartAuth.getAuthHeaders(),
             });
             if (!resp.ok) return;
-            const lessons = await resp.json();
+            var lessons = await resp.json();
 
-            if (lessons.length === 0) {
-                savedList.innerHTML = `<p class="saved-list__empty" data-i18n="noSavedLessons">${I18n.t("noSavedLessons")}</p>`;
+            if (!lessons.length) {
+                savedList.innerHTML = '<p class="saved-lessons__empty">No saved lessons yet. Ask the AI Tutor a question first!</p>';
                 return;
             }
 
-            // Cache lesson data in JS map (not in DOM attributes) for security
             savedLessonCache.clear();
-            savedList.innerHTML = lessons
-                .map((l) => {
-                    savedLessonCache.set(l.id, { content: l.content, sources: l.source_urls || [] });
-                    return `
-                    <div class="saved-card" data-lesson-id="${escapeAttr(l.id)}">
-                        <div class="saved-card__topic">${escapeHtml(l.topic)}</div>
-                        <div class="saved-card__meta">${escapeHtml(l.language_code.toUpperCase())} · ${new Date(l.created_at).toLocaleDateString()}</div>
-                    </div>`;
-                })
-                .join("");
+            savedList.innerHTML = lessons.map(function(l) {
+                savedLessonCache.set(String(l.id), { content: l.content, sources: l.source_urls || [], topic: l.topic });
+                return '<div class="saved-card" data-lid="' + escapeAttr(l.id) + '">'
+                    + '<div class="saved-card__topic">' + escapeHtml(l.topic) + '</div>'
+                    + '<div class="saved-card__meta">' + escapeHtml(l.language_code.toUpperCase()) + ' \u00B7 ' + new Date(l.created_at).toLocaleDateString() + '</div>'
+                    + '</div>';
+            }).join("");
 
-            // Click to re-render a saved lesson
-            savedList.querySelectorAll(".saved-card").forEach((card) => {
-                card.addEventListener("click", () => {
-                    const lessonId = card.getAttribute("data-lesson-id");
-                    const data = savedLessonCache.get(lessonId);
-                    if (data) renderLesson(data);
+            savedList.querySelectorAll(".saved-card").forEach(function(card) {
+                card.addEventListener("click", function() {
+                    var data = savedLessonCache.get(card.dataset.lid);
+                    if (data) showLessonDetail(data);
                 });
             });
-        } catch {
-            // Silently ignore — non-critical
+        } catch (_) {
+            // silently ignore
         }
     }
 
-    // ── Helpers ───────────────────────────────────
-    function showLoading(show) {
-        loadingEl.classList.toggle("hidden", !show);
-        askBtn.disabled = show;
-    }
-
-    function showError(msg) {
-        errorEl.textContent = msg;
-        errorEl.classList.remove("hidden");
-    }
-
-    function hideError() {
-        errorEl.classList.add("hidden");
-    }
+    // ═══════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════
 
     function escapeHtml(str) {
-        const d = document.createElement("div");
+        var d = document.createElement("div");
         d.textContent = str;
         return d.innerHTML;
     }
@@ -285,6 +447,8 @@
         return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    // ── Boot ──────────────────────────────────────
+    // ═══════════════════════════════════════════
+    // BOOT
+    // ═══════════════════════════════════════════
     init();
 })();

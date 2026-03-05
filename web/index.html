@@ -13,114 +13,185 @@
 </head>
 <body>
 
-    <!-- ─── Header ─────────────────────────────── -->
-    <header class="header">
-        <div class="header__brand">
-            <h1 class="header__title">📚 Smart Shiksha</h1>
-            <p class="header__tagline" data-i18n="tagline">AI-powered learning for every student</p>
+    <!-- ═══ APP BAR ═══ -->
+    <header class="app-bar">
+        <div class="app-bar__left">
+            <button id="back-btn" class="app-bar__back hidden" aria-label="Go back">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 class="app-bar__title" id="app-bar-title">Smart Shiksha</h1>
         </div>
-        <div class="header__controls">
-            <label for="lang-select" class="sr-only" data-i18n="selectLanguage">Language</label>
-            <select id="lang-select" class="lang-selector" aria-label="Select Language">
+        <div class="app-bar__right">
+            <select id="lang-select" class="lang-select" aria-label="Select Language">
                 <option value="en">English</option>
                 <option value="hi">हिन्दी</option>
                 <option value="kn">ಕನ್ನಡ</option>
                 <option value="te">తెలుగు</option>
                 <option value="ta">தமிழ்</option>
             </select>
-
-            <!-- Auth controls -->
-            <button id="sign-in-btn" class="btn btn--google" data-i18n="signIn">
-                Sign in with Google
+            <button id="theme-toggle" class="app-bar__icon-btn" aria-label="Toggle theme">
+                <svg id="icon-sun" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 000-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+                <svg id="icon-moon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
             </button>
             <div id="user-info" class="user-info hidden">
-                <img id="user-avatar" class="user-info__avatar" src="" alt="" />
+                <img id="user-avatar" class="user-info__avatar hidden" src="" alt="" />
                 <span id="user-name" class="user-info__name"></span>
-                <button id="sign-out-btn" class="btn btn--small btn--outline" data-i18n="signOut">
-                    Sign Out
-                </button>
+                <button id="sign-out-btn" class="app-bar__text-btn">Sign Out</button>
             </div>
         </div>
     </header>
 
-    <!-- ─── Main Content ───────────────────────── -->
-    <main class="main">
+    <!-- ═══ LOGIN VIEW ═══ -->
+    <div id="login-view" class="view">
+        <div class="login-center">
+            <div class="login-card">
+                <div class="login-card__icon">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="var(--primary)"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                </div>
+                <h2 class="login-card__title">Smart Shiksha</h2>
+                <p class="login-card__subtitle">AI-Powered Learning for Everyone</p>
+                <form id="login-form" class="login-form">
+                    <div class="input-group">
+                        <div class="input-group__icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <input id="login-name" type="text" placeholder="Your Name" required />
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group__icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+                        </div>
+                        <input id="login-email" type="email" placeholder="Email Address" required />
+                    </div>
+                    <p id="login-error" class="login-form__error hidden"></p>
+                    <button type="submit" id="login-btn" class="btn btn--primary btn--block">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+                        <span>Sign In</span>
+                    </button>
+                </form>
+                <p class="login-card__footer">By signing in, you agree to our Terms of Service</p>
+            </div>
+        </div>
+    </div>
 
-        <!-- Login prompt (shown when not signed in) -->
-        <section id="login-prompt" class="login-prompt" aria-labelledby="login-heading">
-            <div class="login-prompt__card">
-                <h2 id="login-heading">📚 Welcome to Smart Shiksha</h2>
-                <p data-i18n="signInPrompt">Sign in to start learning with AI-powered lessons</p>
-                <button id="sign-in-btn-main" class="btn btn--google btn--lg">
-                    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.04 24.04 0 0 0 0 21.56l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-                    <span data-i18n="signIn">Sign in with Google</span>
+    <!-- ═══ DASHBOARD VIEW ═══ -->
+    <div id="dashboard-view" class="view hidden">
+        <div class="dashboard">
+            <div class="dashboard__header">
+                <h2 id="greeting-name" class="dashboard__greeting">Hello! 👋</h2>
+                <p id="greeting-info" class="dashboard__info">Ready to learn something new today?</p>
+            </div>
+            <div class="dashboard__grid">
+                <button class="dash-card" data-view="tutor" style="--c1:#6A1B9A;--c2:#AB47BC;">
+                    <svg class="dash-card__icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/></svg>
+                    <div class="dash-card__text">
+                        <strong>AI Tutor</strong>
+                        <span>Ask anything</span>
+                    </div>
+                </button>
+                <button class="dash-card" data-view="lessons-browse" style="--c1:#1565C0;--c2:#42A5F5;">
+                    <svg class="dash-card__icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg>
+                    <div class="dash-card__text">
+                        <strong>Lessons</strong>
+                        <span>Browse your syllabus</span>
+                    </div>
+                </button>
+                <button class="dash-card" data-view="quiz" style="--c1:#2E7D32;--c2:#66BB6A;">
+                    <svg class="dash-card__icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+                    <div class="dash-card__text">
+                        <strong>Quizzes</strong>
+                        <span>Test your knowledge</span>
+                    </div>
+                </button>
+                <button class="dash-card" data-view="saved" style="--c1:#E65100;--c2:#FF9800;">
+                    <svg class="dash-card__icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                    <div class="dash-card__text">
+                        <strong>Revision</strong>
+                        <span>Review saved lessons</span>
+                    </div>
+                </button>
+                <button class="dash-card" data-view="exam" style="--c1:#C62828;--c2:#EF5350;">
+                    <svg class="dash-card__icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+                    <div class="dash-card__text">
+                        <strong>Exam Prep</strong>
+                        <span>Practice tests</span>
+                    </div>
+                </button>
+                <button class="dash-card" data-view="profile" style="--c1:#37474F;--c2:#78909C;">
+                    <svg class="dash-card__icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <div class="dash-card__text">
+                        <strong>Profile</strong>
+                        <span>Settings &amp; progress</span>
+                    </div>
                 </button>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <!-- App content (hidden until signed in) -->
-        <div id="app-content" class="hidden">
-        <section class="ask-section" aria-labelledby="ask-heading">
-            <h2 id="ask-heading" data-i18n="askHeading">Ask a Question</h2>
-            <form id="ask-form" class="ask-form" autocomplete="off">
-                <textarea
-                    id="question-input"
-                    class="ask-form__input"
-                    rows="3"
-                    maxlength="1000"
-                    required
-                    data-i18n-placeholder="questionPlaceholder"
-                    placeholder="Type your question here… e.g. What is photosynthesis?"
-                ></textarea>
-                <button type="submit" id="ask-btn" class="btn btn--primary" data-i18n="askButton">
-                    Get Lesson
-                </button>
-            </form>
-            <div id="loading" class="loading hidden" aria-live="polite">
-                <div class="spinner"></div>
-                <span data-i18n="loading">Generating your lesson…</span>
+    <!-- ═══ AI TUTOR VIEW ═══ -->
+    <div id="tutor-view" class="view hidden">
+        <div class="tutor">
+            <div id="tutor-chat" class="tutor__chat">
+                <div id="tutor-empty" class="tutor__empty">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.35"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/></svg>
+                    <h3>Ask me anything!</h3>
+                    <p>I can explain any topic in your preferred language with detailed lessons.</p>
+                    <div class="tutor__chips">
+                        <button class="chip" data-q="What is photosynthesis?">What is photosynthesis?</button>
+                        <button class="chip" data-q="Explain Newton's laws">Explain Newton's laws</button>
+                        <button class="chip" data-q="Solve: x² + 5x + 6 = 0">Solve: x² + 5x + 6 = 0</button>
+                    </div>
+                </div>
             </div>
-            <div id="error-msg" class="error hidden" role="alert"></div>
-        </section>
+            <div class="tutor__input-bar">
+                <form id="tutor-form" class="tutor__form">
+                    <input id="tutor-input" type="text" placeholder="Ask a question…" maxlength="1000" required autocomplete="off" />
+                    <button type="submit" id="tutor-send" class="tutor__send-btn" aria-label="Send">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
-        <!-- Lesson display -->
-        <section id="lesson-section" class="lesson-section hidden" aria-labelledby="lesson-heading">
-            <div class="lesson-header">
-                <h2 id="lesson-heading" data-i18n="lessonHeading">Your Lesson</h2>
-                <button id="save-btn" class="btn btn--outline" data-i18n="saveLesson">
-                    💾 Save Lesson
-                </button>
+    <!-- ═══ SAVED LESSONS VIEW ═══ -->
+    <div id="saved-view" class="view hidden">
+        <div class="saved-lessons">
+            <div id="saved-list" class="saved-lessons__list">
+                <p class="saved-lessons__empty">No saved lessons yet. Ask the AI Tutor a question first!</p>
             </div>
-            <article id="lesson-content" class="lesson-content markdown-body"></article>
-            <div id="lesson-sources" class="lesson-sources hidden">
-                <h3 data-i18n="sourcesHeading">Sources</h3>
+        </div>
+    </div>
+
+    <!-- ═══ LESSON DETAIL VIEW ═══ -->
+    <div id="lesson-view" class="view hidden">
+        <div class="lesson-detail">
+            <article id="lesson-content" class="lesson-detail__body markdown-body"></article>
+            <div id="lesson-sources" class="lesson-detail__sources hidden">
+                <h3>Sources</h3>
                 <ul id="sources-list"></ul>
             </div>
-        </section>
+            <button id="save-lesson-btn" class="btn btn--primary btn--block save-btn">💾 Save Lesson</button>
+        </div>
+    </div>
 
-        <!-- Saved lessons -->
-        <section id="saved-section" class="saved-section" aria-labelledby="saved-heading">
-            <h2 id="saved-heading" data-i18n="savedHeading">Saved Lessons</h2>
-            <div id="saved-list" class="saved-list">
-                <p class="saved-list__empty" data-i18n="noSavedLessons">
-                    No saved lessons yet. Ask a question to get started!
-                </p>
-            </div>
-        </section>
+    <!-- ═══ COMING SOON VIEW ═══ -->
+    <div id="coming-soon-view" class="view hidden">
+        <div class="coming-soon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.3"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <h3 id="coming-soon-title">Coming Soon</h3>
+            <p>This feature is available in the Smart Shiksha mobile app. Download it to access all features!</p>
+            <button class="btn btn--outline" id="coming-soon-back">← Back to Dashboard</button>
+        </div>
+    </div>
 
-        </div><!-- /app-content -->
-
-    </main>
-
-    <!-- ─── Footer ─────────────────────────────── -->
+    <!-- Footer -->
     <footer class="footer">
-        <p>&copy; 2026 Smart Shiksha &mdash; <span data-i18n="footerText">Education for All</span></p>
+        <p>&copy; 2026 Smart Shiksha &mdash; Education for All</p>
     </footer>
 
     <!-- Auth0 SPA SDK -->
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
-
-    <!-- Scripts (order matters) -->
     <script src="js/markdown.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/auth.js"></script>

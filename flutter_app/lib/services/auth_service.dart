@@ -172,8 +172,9 @@ class AuthService extends ChangeNotifier {
       if (curriculum != null) body['curriculum'] = curriculum;
       if (classGrade != null) body['class_grade'] = classGrade;
       if (stream != null) body['stream'] = stream;
-      if (languagePreference != null)
+      if (languagePreference != null) {
         body['language_preference'] = languagePreference;
+      }
 
       final resp = await http.patch(
         Uri.parse('$_base/auth/profile'),
