@@ -83,28 +83,33 @@ const MarkdownRenderer = (() => {
         });
 
         // ── List handling (robust: flatten first, use unique markers) ──
+        // NOTE: Use \x01 for list tokens to avoid collision with \x00 used by code placeholders
 
         // Flatten ALL indentation from list markers to prevent nesting
         html = html.replace(/^[ \t]+([-*]\s+)/gm, "$1");
         html = html.replace(/^[ \t]+(\d+\.\s+)/gm, "$1");
 
         // Mark unordered list items with unique tokens (avoid <li> collisions)
-        html = html.replace(/^[-*]\s+(.+)$/gm, "\x00UL_LI\x00$1\x00/UL_LI\x00");
+        html = html.replace(/^[-*]\s+(.+)$/gm, "\x01UL_S\x02$1\x01UL_E\x02");
 
         // Mark ordered list items with unique tokens
-        html = html.replace(/^\d+\.\s+(.+)$/gm, "\x00OL_LI\x00$1\x00/OL_LI\x00");
+        html = html.replace(/^\d+\.\s+(.+)$/gm, "\x01OL_S\x02$1\x01OL_E\x02");
 
         // Group consecutive UL items → <ul>
-        html = html.replace(/((?:\x00UL_LI\x00[^\x00]*\x00\/UL_LI\x00\n*)+)/g, function(m) {
-            var items = m.replace(/\x00UL_LI\x00/g, "<li>").replace(/\x00\/UL_LI\x00/g, "</li>");
+        html = html.replace(/((?:\x01UL_S\x02.*?\x01UL_E\x02\n*)+)/g, function(m) {
+            var items = m.replace(/\x01UL_S\x02/g, "<li>").replace(/\x01UL_E\x02/g, "</li>");
             return "<ul>" + items.trim() + "</ul>";
         });
 
         // Group consecutive OL items → <ol>
-        html = html.replace(/((?:\x00OL_LI\x00[^\x00]*\x00\/OL_LI\x00\n*)+)/g, function(m) {
-            var items = m.replace(/\x00OL_LI\x00/g, "<li>").replace(/\x00\/OL_LI\x00/g, "</li>");
+        html = html.replace(/((?:\x01OL_S\x02.*?\x01OL_E\x02\n*)+)/g, function(m) {
+            var items = m.replace(/\x01OL_S\x02/g, "<li>").replace(/\x01OL_E\x02/g, "</li>");
             return "<ol>" + items.trim() + "</ol>";
         });
+
+        // Safety net: remove any stray list tokens that weren't grouped
+        html = html.replace(/\x01UL_S\x02/g, "<li>").replace(/\x01UL_E\x02/g, "</li>");
+        html = html.replace(/\x01OL_S\x02/g, "<li>").replace(/\x01OL_E\x02/g, "</li>");
 
         // Paragraphs: wrap remaining loose lines
         html = html
