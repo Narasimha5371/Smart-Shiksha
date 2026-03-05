@@ -3,11 +3,15 @@ Lesson-related API routes.
 
 Endpoints:
   POST /api/ask               → RAG pipeline: question → AI lesson (auth required)
+  POST /api/ask-with-file     → RAG pipeline with image/file upload (auth required)
   POST /api/lessons/save      → Persist a lesson for offline access (auth required)
   GET  /api/lessons/mine      → List saved lessons for the current user (auth required)
 """
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+import base64
+import logging
+
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, UploadFile
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy import select
@@ -29,6 +33,12 @@ settings = get_settings()
 router = APIRouter(prefix="/api", tags=["lessons"])
 
 limiter = Limiter(key_func=get_remote_address)
+logger = logging.getLogger(__name__)
+
+# Allowed image MIME types and max file size (5 MB)
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+ALLOWED_TEXT_TYPES = {"text/plain", "application/pdf"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 # ──────────────────────────────────────────────
@@ -54,6 +64,73 @@ async def ask_question(
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
+    return AskResponse(**result)
+
+
+# ──────────────────────────────────────────────
+#  POST /api/ask-with-file  — question + image/file upload (auth required)
+# ──────────────────────────────────────────────
+
+@router.post("/ask-with-file", response_model=AskResponse)
+@limiter.limit(settings.RATE_LIMIT_ASK)
+async def ask_with_file(
+    request: Request,
+    question: str = Form(..., min_length=3, max_length=1000),
+    target_language: str = Form(default="en"),
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+) -> AskResponse:
+    """
+    Accept a student's question + uploaded image or text file.
+    Analyze the file content (vision model for images, text extraction for docs)
+    and run the full RAG pipeline with extra context.
+    """
+    # Validate file type
+    content_type = file.content_type or ""
+    is_image = content_type in ALLOWED_IMAGE_TYPES
+    is_text = content_type in ALLOWED_TEXT_TYPES
+
+    if not is_image and not is_text:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {content_type}. "
+                   f"Allowed: images (JPEG, PNG, GIF, WebP) and text files (.txt).",
+        )
+
+    # Read file data
+    file_data = await file.read()
+    if len(file_data) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large ({len(file_data) / 1024 / 1024:.1f} MB). Max: 5 MB.",
+        )
+
+    image_base64 = None
+    image_mime = None
+    file_text = None
+
+    if is_image:
+        image_base64 = base64.b64encode(file_data).decode("utf-8")
+        image_mime = content_type
+        logger.info("Processing image upload: %s (%s, %d bytes)", file.filename, content_type, len(file_data))
+    elif is_text:
+        try:
+            file_text = file_data.decode("utf-8")
+        except UnicodeDecodeError:
+            file_text = file_data.decode("latin-1", errors="replace")
+        logger.info("Processing text upload: %s (%d chars)", file.filename, len(file_text))
+
+    try:
+        result = await rag_pipeline.generate_lesson_with_file(
+            question=question,
+            target_language=target_language,
+            image_base64=image_base64,
+            image_mime=image_mime or "image/jpeg",
+            file_text=file_text,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
     return AskResponse(**result)
 
 

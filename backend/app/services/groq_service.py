@@ -134,6 +134,67 @@ async def generate(
         raise RuntimeError(f"AI service error: {exc}")
 
 
+# ── Vision model for image analysis ───────────────────────────────────
+
+VISION_MODEL = "llama-3.2-11b-vision-preview"
+
+IMAGE_ANALYSIS_PROMPT = """\
+You are an educational assistant. Analyze this image carefully and describe \
+its educational content in detail. If it's a:
+- **Textbook page**: Extract all text, formulas, and key concepts.
+- **Handwritten work**: Read and transcribe the handwritten text/equations.
+- **Diagram/Chart**: Describe what it shows, label relationships, and explain.
+- **Math problem**: Read the problem and identify what is being asked.
+- **Photo of a question paper**: Extract every question clearly.
+
+Be thorough and precise. Your description will be used as context to generate \
+a full lesson for the student."""
+
+
+async def analyze_image(image_base64: str, mime_type: str = "image/jpeg") -> str:
+    """
+    Use Groq vision model to describe/analyze an uploaded image.
+
+    Args:
+        image_base64: Base64-encoded image data (no data-URI prefix).
+        mime_type: MIME type of the image (image/jpeg, image/png, etc.).
+
+    Returns:
+        Text description of the image content.
+    """
+    client = _get_client()
+    data_uri = f"data:{mime_type};base64,{image_base64}"
+
+    def _call() -> str:
+        response = client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": IMAGE_ANALYSIS_PROMPT},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": data_uri},
+                        },
+                    ],
+                }
+            ],
+            temperature=0.3,
+            max_tokens=2048,
+        )
+        return response.choices[0].message.content or ""
+
+    try:
+        return await asyncio.to_thread(_call)
+    except AuthenticationError:
+        log.error("Groq API key invalid for vision model")
+        raise RuntimeError("AI service authentication failed.")
+    except APIError as exc:
+        log.error("Groq vision API error: %s", exc)
+        raise RuntimeError(f"Image analysis failed: {exc}")
+
+
 # Convenience alias used by quiz / competitive routers
 async def call_groq(prompt: str, language: str = "en") -> str:
     """Simple wrapper: prompt in → text out."""

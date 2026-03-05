@@ -144,7 +144,23 @@
                 </div>
             </div>
             <div class="tutor__input-bar">
+                <div id="tutor-preview" class="tutor__preview hidden">
+                    <div class="tutor__preview-inner">
+                        <img id="tutor-preview-img" class="tutor__preview-img hidden" alt="Upload preview" />
+                        <div id="tutor-preview-file" class="tutor__preview-file hidden">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                            <span id="tutor-preview-name"></span>
+                        </div>
+                        <button type="button" id="tutor-preview-remove" class="tutor__preview-remove" aria-label="Remove file">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                        </button>
+                    </div>
+                </div>
                 <form id="tutor-form" class="tutor__form">
+                    <button type="button" id="tutor-attach" class="tutor__attach-btn" aria-label="Attach file or image" title="Upload image or file">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+                    </button>
+                    <input type="file" id="tutor-file-input" accept="image/jpeg,image/png,image/gif,image/webp,.txt" class="hidden" />
                     <input id="tutor-input" type="text" placeholder="Ask a question…" maxlength="1000" required autocomplete="off" />
                     <button type="submit" id="tutor-send" class="tutor__send-btn" aria-label="Send">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>

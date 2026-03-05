@@ -59,6 +59,15 @@
     const tutorForm  = document.getElementById("tutor-form");
     const tutorInput = document.getElementById("tutor-input");
     const tutorSend  = document.getElementById("tutor-send");
+    const tutorAttach       = document.getElementById("tutor-attach");
+    const tutorFileInput    = document.getElementById("tutor-file-input");
+    const tutorPreview      = document.getElementById("tutor-preview");
+    const tutorPreviewImg   = document.getElementById("tutor-preview-img");
+    const tutorPreviewFile  = document.getElementById("tutor-preview-file");
+    const tutorPreviewName  = document.getElementById("tutor-preview-name");
+    const tutorPreviewRemove = document.getElementById("tutor-preview-remove");
+
+    var pendingFile = null; // File object waiting to be uploaded
 
     // -- DOM refs: Saved --
     const savedList = document.getElementById("saved-list");
@@ -177,6 +186,13 @@
                 tutorForm.dispatchEvent(new Event("submit"));
             });
         });
+
+        // Tutor file upload
+        tutorAttach.addEventListener("click", function() { tutorFileInput.click(); });
+        tutorFileInput.addEventListener("change", onFileSelected);
+        tutorPreviewRemove.addEventListener("click", clearPendingFile);
+        // Make text input not required when file is present
+        tutorInput.addEventListener("input", updateSendState);
 
         // Save lesson
         saveLessonBtn.addEventListener("click", onSaveLesson);
@@ -463,24 +479,104 @@
 
     var bubbleCounter = 0;
 
+    function onFileSelected(e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        // Validate file size (5 MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            alert("File too large. Maximum size is 5 MB.");
+            tutorFileInput.value = "";
+            return;
+        }
+
+        pendingFile = file;
+        tutorPreview.classList.remove("hidden");
+
+        if (file.type.startsWith("image/")) {
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                tutorPreviewImg.src = ev.target.result;
+                tutorPreviewImg.classList.remove("hidden");
+                tutorPreviewFile.classList.add("hidden");
+            };
+            reader.readAsDataURL(file);
+        } else {
+            tutorPreviewImg.classList.add("hidden");
+            tutorPreviewFile.classList.remove("hidden");
+            tutorPreviewName.textContent = file.name;
+        }
+
+        // Allow submit without text when file is attached
+        tutorInput.required = false;
+        updateSendState();
+    }
+
+    function clearPendingFile() {
+        pendingFile = null;
+        tutorFileInput.value = "";
+        tutorPreview.classList.add("hidden");
+        tutorPreviewImg.src = "";
+        tutorPreviewImg.classList.add("hidden");
+        tutorPreviewFile.classList.add("hidden");
+        tutorInput.required = true;
+        updateSendState();
+    }
+
+    function updateSendState() {
+        var hasText = tutorInput.value.trim().length > 0;
+        var hasFile = pendingFile !== null;
+        tutorSend.disabled = !hasText && !hasFile;
+    }
+
     async function onTutorSubmit(e) {
         e.preventDefault();
         var question = tutorInput.value.trim();
-        if (!question) return;
+        var file = pendingFile;
+
+        if (!question && !file) return;
 
         if (tutorEmpty) tutorEmpty.classList.add("hidden");
-        addChatBubble(question, true);
+
+        // Show user message with optional image thumbnail
+        var userBubbleOpts = {};
+        if (file && file.type.startsWith("image/")) {
+            userBubbleOpts.imageUrl = tutorPreviewImg.src;
+        } else if (file) {
+            userBubbleOpts.fileName = file.name;
+        }
+        addChatBubble(question || "📎 " + (file ? file.name : "File"), true, userBubbleOpts);
+
         tutorInput.value = "";
+        clearPendingFile();
         tutorSend.disabled = true;
 
-        var loadingId = addChatBubble("Thinking\u2026", false, { loading: true });
+        var loadingMsg = file ? "Analyzing your upload\u2026" : "Thinking\u2026";
+        var loadingId = addChatBubble(loadingMsg, false, { loading: true });
 
         try {
-            var resp = await fetch(API_BASE + "/ask", {
-                method: "POST",
-                headers: Object.assign({ "Content-Type": "application/json" }, SmartAuth.getAuthHeaders()),
-                body: JSON.stringify({ question: question, target_language: currentLanguage }),
-            });
+            var resp;
+
+            if (file) {
+                // Use multipart FormData for file upload
+                var formData = new FormData();
+                formData.append("question", question || "Please explain what is shown in this image/file.");
+                formData.append("target_language", currentLanguage);
+                formData.append("file", file);
+
+                resp = await fetch(API_BASE + "/ask-with-file", {
+                    method: "POST",
+                    headers: SmartAuth.getAuthHeaders(),
+                    body: formData,
+                });
+            } else {
+                // Standard JSON request
+                resp = await fetch(API_BASE + "/ask", {
+                    method: "POST",
+                    headers: Object.assign({ "Content-Type": "application/json" }, SmartAuth.getAuthHeaders()),
+                    body: JSON.stringify({ question: question, target_language: currentLanguage }),
+                });
+            }
 
             if (!resp.ok) {
                 var errData = {};
@@ -517,7 +613,27 @@
             div.textContent = text;
             div.style.borderLeft = "3px solid var(--error)";
         } else {
-            div.textContent = text;
+            // Image thumbnail (for user bubbles with uploaded images)
+            if (opts.imageUrl) {
+                var img = document.createElement("img");
+                img.src = opts.imageUrl;
+                img.className = "bubble__image";
+                img.alt = "Uploaded image";
+                div.appendChild(img);
+            }
+            // File indicator (for user bubbles with uploaded files)
+            if (opts.fileName) {
+                var fileTag = document.createElement("div");
+                fileTag.className = "bubble__file-tag";
+                fileTag.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg> ' + escapeHtml(opts.fileName);
+                div.appendChild(fileTag);
+            }
+            // Text content
+            if (text) {
+                var textSpan = document.createElement("span");
+                textSpan.textContent = text;
+                div.appendChild(textSpan);
+            }
             if (opts.lesson) {
                 var actions = document.createElement("div");
                 actions.className = "bubble__actions";

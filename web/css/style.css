@@ -502,6 +502,34 @@ body {
 .bubble__view-btn:hover { background: rgba(0,0,0,0.05); }
 [data-theme="dark"] .bubble__view-btn:hover { background: rgba(255,255,255,0.08); }
 
+/* Image/file in chat bubbles */
+.bubble__image {
+    display: block;
+    max-width: 200px;
+    max-height: 180px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    object-fit: cover;
+}
+.bubble--user .bubble__image {
+    border: 2px solid rgba(255,255,255,0.25);
+}
+.bubble__file-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    opacity: 0.85;
+    margin-bottom: 6px;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 8px;
+    width: fit-content;
+}
+.bubble--bot .bubble__file-tag {
+    background: rgba(0,0,0,0.06);
+}
+
 /* Tutor Input Bar */
 .tutor__input-bar {
     padding: 8px 16px 16px;
@@ -509,10 +537,80 @@ body {
     box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
 }
 
+/* File Preview (above input) */
+.tutor__preview {
+    padding: 8px 0 4px;
+}
+.tutor__preview-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-high);
+    border: 1.5px solid var(--outline);
+    border-radius: 12px;
+    padding: 6px 10px;
+    max-width: 280px;
+}
+.tutor__preview-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+.tutor__preview-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.tutor__preview-remove {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--surface);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.tutor__preview-remove:hover {
+    background: var(--error);
+    color: #fff;
+}
+
 .tutor__form {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Attach button (paperclip) */
+.tutor__attach-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.tutor__attach-btn:hover {
+    background: var(--surface-high);
+    color: var(--primary);
 }
 
 .tutor__form input {
