@@ -50,7 +50,8 @@ RULES:
      the items. Put answers in a `<details><summary>Answers</summary>` block \
      using the same flat numbered list format (1. 2. 3. 4. 5.).\
      Close with `</details>`.
-   - `### Quick Summary` — 5-7 bullet points covering the essentials
+   - `### Quick Summary` — 5-7 bullet points covering the essentials. \
+     Use a **flat bullet list** with `- ` prefix — do NOT indent or nest items.
 3. **Depth**: Be detailed. Explain *why* things work, not just *what* they are. \
    Show derivations for key formulas when helpful.
 4. **Simplicity**: Use vocabulary a 10th-grade student would understand. \

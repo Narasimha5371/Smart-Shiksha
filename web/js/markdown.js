@@ -82,19 +82,28 @@ const MarkdownRenderer = (() => {
             return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${text}</a>`;
         });
 
-        // Unordered lists (- item or * item)
-        html = html.replace(/^(?:[-*])\s+(.+)$/gm, "<li>$1</li>");
-        html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+        // ── List handling (robust: flatten first, use unique markers) ──
 
-        // Ordered lists (1. item)
-        // First flatten any indented numbered items so they don't nest
+        // Flatten ALL indentation from list markers to prevent nesting
+        html = html.replace(/^[ \t]+([-*]\s+)/gm, "$1");
         html = html.replace(/^[ \t]+(\d+\.\s+)/gm, "$1");
-        html = html.replace(/^\d+\.\s+(.+)$/gm, "<li>$1</li>");
-        // Group consecutive <li> (possibly separated by blank lines) into <ol>
-        html = html.replace(/((?:<li>.*<\/li>\n*)+)/g, function(match) {
-            // Only wrap if not already inside <ul>
-            if (match.indexOf('<ul>') !== -1) return match;
-            return '<ol>' + match.replace(/\n+/g, '\n') + '</ol>';
+
+        // Mark unordered list items with unique tokens (avoid <li> collisions)
+        html = html.replace(/^[-*]\s+(.+)$/gm, "\x00UL_LI\x00$1\x00/UL_LI\x00");
+
+        // Mark ordered list items with unique tokens
+        html = html.replace(/^\d+\.\s+(.+)$/gm, "\x00OL_LI\x00$1\x00/OL_LI\x00");
+
+        // Group consecutive UL items → <ul>
+        html = html.replace(/((?:\x00UL_LI\x00[^\x00]*\x00\/UL_LI\x00\n*)+)/g, function(m) {
+            var items = m.replace(/\x00UL_LI\x00/g, "<li>").replace(/\x00\/UL_LI\x00/g, "</li>");
+            return "<ul>" + items.trim() + "</ul>";
+        });
+
+        // Group consecutive OL items → <ol>
+        html = html.replace(/((?:\x00OL_LI\x00[^\x00]*\x00\/OL_LI\x00\n*)+)/g, function(m) {
+            var items = m.replace(/\x00OL_LI\x00/g, "<li>").replace(/\x00\/OL_LI\x00/g, "</li>");
+            return "<ol>" + items.trim() + "</ol>";
         });
 
         // Paragraphs: wrap remaining loose lines
