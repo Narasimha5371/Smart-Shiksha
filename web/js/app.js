@@ -7,7 +7,8 @@
 (() => {
     "use strict";
 
-    const API_BASE = "http://localhost:8001/api";
+// web/js/app.js
+const API_BASE = "https://smartsiksha.onrender.com/api";
 
     // ── DOM refs: App Bar ──
     const appBarTitle   = document.getElementById("app-bar-title");

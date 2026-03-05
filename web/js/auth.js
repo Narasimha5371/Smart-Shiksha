@@ -23,8 +23,8 @@ const SmartAuth = (() => {
     const AUTH0_DOMAIN    = "dev-vzwcjg03kzp4d44m.us.auth0.com";
     const AUTH0_CLIENT_ID = "ZzN4EGlsBIuOie0tru5LEOZKZh920eMw";
 
-    const API_BASE = "http://localhost:8001/api";
-
+// web/js/auth.js
+const API_BASE = "https://smartsiksha.onrender.com/api";
     // ── State ────────────────────────────────────
     let _auth0Client = null;
     let _jwt = null;
