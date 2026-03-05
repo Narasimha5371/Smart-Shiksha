@@ -7,8 +7,7 @@
 (() => {
     "use strict";
 
-// web/js/app.js
-const API_BASE = "https://smartsiksha.onrender.com/api";
+    const API_BASE = "https://smartsiksha.onrender.com/api";
 
     // ── DOM refs: App Bar ──
     const appBarTitle   = document.getElementById("app-bar-title");
