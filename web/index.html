@@ -175,14 +175,211 @@
         </div>
     </div>
 
-    <!-- ═══ COMING SOON VIEW ═══ -->
-    <div id="coming-soon-view" class="view hidden">
-        <div class="coming-soon">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.3"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            <h3 id="coming-soon-title">Coming Soon</h3>
-            <p>This feature is available in the Smart Shiksha mobile app. Download it to access all features!</p>
-            <button class="btn btn--outline" id="coming-soon-back">← Back to Dashboard</button>
+    <!-- ═══ ONBOARDING VIEW ═══ -->
+    <div id="onboarding-view" class="view hidden">
+        <div class="onboarding">
+            <div class="onboarding__card">
+                <h2 class="onboarding__title">Welcome! Let's set up your profile</h2>
+                <p class="onboarding__subtitle">Tell us about your studies so we can personalize your learning experience.</p>
+                <div id="onboarding-steps">
+                    <div class="onboarding__step" id="ob-step-curriculum">
+                        <label class="onboarding__label">Select your Board / Curriculum</label>
+                        <div id="ob-curricula-list" class="onboarding__options"></div>
+                    </div>
+                    <div class="onboarding__step hidden" id="ob-step-class">
+                        <label class="onboarding__label">Select your Class</label>
+                        <div id="ob-class-list" class="onboarding__options"></div>
+                    </div>
+                    <div class="onboarding__step hidden" id="ob-step-stream">
+                        <label class="onboarding__label">Select your Stream</label>
+                        <div id="ob-stream-list" class="onboarding__options"></div>
+                    </div>
+                </div>
+                <div class="onboarding__progress">
+                    <div class="onboarding__progress-bar" id="ob-progress-bar" style="width:33%"></div>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- ═══ LESSONS BROWSER VIEW ═══ -->
+    <div id="lessons-browse-view" class="view hidden">
+        <div class="browse-container">
+            <div id="browse-subjects" class="browse-section">
+                <h3 class="browse-section__title">📚 Subjects</h3>
+                <div id="subjects-grid" class="browse-grid"></div>
+            </div>
+            <div id="browse-chapters" class="browse-section hidden">
+                <h3 class="browse-section__title" id="chapters-title">📖 Chapters</h3>
+                <div id="chapters-list" class="browse-list"></div>
+            </div>
+            <div id="browse-lessons" class="browse-section hidden">
+                <div class="browse-lessons-header">
+                    <h3 class="browse-section__title" id="lessons-title">📝 Lessons</h3>
+                    <button class="btn btn--primary btn--sm" id="generate-lesson-btn">✨ Generate Lesson</button>
+                </div>
+                <div id="lessons-list" class="browse-list"></div>
+                <div id="lessons-empty" class="browse-empty hidden">
+                    <p>No lessons yet for this chapter. Click "Generate Lesson" to create one!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ QUIZ VIEW ═══ -->
+    <div id="quiz-view" class="view hidden">
+        <div class="quiz-container">
+            <div id="quiz-subjects" class="browse-section">
+                <h3 class="browse-section__title">🧩 Pick a Subject</h3>
+                <div id="quiz-subjects-grid" class="browse-grid"></div>
+            </div>
+            <div id="quiz-chapters" class="browse-section hidden">
+                <h3 class="browse-section__title" id="quiz-chapters-title">📖 Pick a Chapter</h3>
+                <div id="quiz-chapters-list" class="browse-list"></div>
+            </div>
+            <div id="quiz-active" class="quiz-active hidden">
+                <div class="quiz-header">
+                    <h3 id="quiz-chapter-name"></h3>
+                    <div class="quiz-score-bar">
+                        <span id="quiz-progress-text">Question 1 of 15</span>
+                    </div>
+                </div>
+                <div id="quiz-question-area" class="quiz-question-area"></div>
+                <div class="quiz-actions">
+                    <button class="btn btn--primary" id="quiz-submit-btn">Submit Answers</button>
+                </div>
+                <div id="quiz-results" class="quiz-results hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ EXAM PREP VIEW ═══ -->
+    <div id="exam-view" class="view hidden">
+        <div class="exam-container">
+            <div id="exam-list" class="browse-section">
+                <h3 class="browse-section__title">🏆 Competitive Exams</h3>
+                <div id="exams-grid" class="browse-grid"></div>
+                <div id="exams-empty" class="browse-empty hidden"><p>No exams available for your class.</p></div>
+            </div>
+            <div id="exam-mock-tests" class="browse-section hidden">
+                <div class="browse-lessons-header">
+                    <h3 class="browse-section__title" id="mock-tests-title">📝 Mock Tests</h3>
+                    <button class="btn btn--primary btn--sm" id="generate-mock-btn">✨ Generate Mock Test</button>
+                </div>
+                <div id="mock-tests-list" class="browse-list"></div>
+                <div id="mock-tests-empty" class="browse-empty hidden"><p>No mock tests yet. Generate one!</p></div>
+            </div>
+            <div id="exam-take-test" class="quiz-active hidden">
+                <div class="quiz-header">
+                    <h3 id="mock-test-title"></h3>
+                    <div class="quiz-score-bar">
+                        <span id="mock-timer">Time: 0:00</span>
+                        <span id="mock-progress-text"></span>
+                    </div>
+                </div>
+                <div id="mock-question-area" class="quiz-question-area"></div>
+                <div class="quiz-actions">
+                    <button class="btn btn--primary" id="mock-submit-btn">Submit Test</button>
+                </div>
+                <div id="mock-results" class="quiz-results hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PROFILE VIEW ═══ -->
+    <div id="profile-view" class="view hidden">
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <h2 id="profile-name" class="profile-name">Student</h2>
+                <p id="profile-email" class="profile-email">email@example.com</p>
+            </div>
+            <div class="profile-section">
+                <h3 class="profile-section__title">📚 Academic Info</h3>
+                <div class="profile-info-grid">
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Curriculum</span>
+                        <span class="profile-info-value" id="profile-curriculum">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Class</span>
+                        <span class="profile-info-value" id="profile-class">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Stream</span>
+                        <span class="profile-info-value" id="profile-stream">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                        <span class="profile-info-label">Language</span>
+                        <span class="profile-info-value" id="profile-language">—</span>
+                    </div>
+                </div>
+                <button class="btn btn--outline btn--sm" id="edit-academic-btn">✏️ Edit Academic Info</button>
+            </div>
+            <div class="profile-section">
+                <h3 class="profile-section__title">📊 Subject Progress</h3>
+                <div id="profile-stats" class="profile-stats"></div>
+                <div id="profile-stats-empty" class="browse-empty hidden"><p>Complete onboarding to see your progress stats.</p></div>
+            </div>
+            <div class="profile-section">
+                <h3 class="profile-section__title">⚙️ Preferences</h3>
+                <div class="profile-prefs">
+                    <div class="profile-pref-row">
+                        <span>Dark Mode</span>
+                        <button class="btn btn--outline btn--sm" id="profile-theme-toggle">Toggle</button>
+                    </div>
+                    <div class="profile-pref-row">
+                        <span>Language</span>
+                        <select id="profile-lang-select" class="profile-select">
+                            <option value="en">English</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="kn">ಕನ್ನಡ</option>
+                            <option value="te">తెలుగు</option>
+                            <option value="ta">தமிழ்</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn--outline btn--block profile-logout-btn" id="profile-logout-btn">🚪 Sign Out</button>
+            <p class="profile-version">Smart Shiksha v1.0.0</p>
+        </div>
+    </div>
+
+    <!-- ═══ EDIT ACADEMIC DIALOG ═══ -->
+    <div id="edit-academic-dialog" class="dialog-overlay hidden">
+        <div class="dialog-card">
+            <h3>Edit Academic Info</h3>
+            <div class="dialog-form">
+                <label>Curriculum</label>
+                <select id="edit-curriculum" class="dialog-select"></select>
+                <label>Class</label>
+                <select id="edit-class" class="dialog-select">
+                    <option value="6">Class 6</option><option value="7">Class 7</option>
+                    <option value="8">Class 8</option><option value="9">Class 9</option>
+                    <option value="10">Class 10</option><option value="11">Class 11</option>
+                    <option value="12">Class 12</option>
+                </select>
+                <label>Stream <small>(class 11-12 only)</small></label>
+                <select id="edit-stream" class="dialog-select">
+                    <option value="">None</option>
+                    <option value="science">Science</option>
+                    <option value="commerce">Commerce</option>
+                    <option value="arts">Arts</option>
+                </select>
+            </div>
+            <div class="dialog-actions">
+                <button class="btn btn--outline btn--sm" id="edit-cancel-btn">Cancel</button>
+                <button class="btn btn--primary btn--sm" id="edit-save-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ LOADING OVERLAY ═══ -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Loading...</p>
     </div>
 
     <!-- Footer -->
