@@ -35,10 +35,10 @@ router = APIRouter(prefix="/api", tags=["lessons"])
 limiter = Limiter(key_func=get_remote_address)
 logger = logging.getLogger(__name__)
 
-# Allowed image MIME types and max file size (5 MB)
+# Allowed image MIME types and max file size (40 MB)
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 ALLOWED_TEXT_TYPES = {"text/plain", "application/pdf"}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_FILE_SIZE = 40 * 1024 * 1024  # 40 MB
 
 
 # ──────────────────────────────────────────────
@@ -94,7 +94,7 @@ async def ask_with_file(
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported file type: {content_type}. "
-                   f"Allowed: images (JPEG, PNG, GIF, WebP) and text files (.txt).",
+                   f"Allowed: images (JPEG, PNG, GIF, WebP), PDF, and text files.",
         )
 
     # Read file data
@@ -102,7 +102,7 @@ async def ask_with_file(
     if len(file_data) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File too large ({len(file_data) / 1024 / 1024:.1f} MB). Max: 5 MB.",
+            detail=f"File too large ({len(file_data) / 1024 / 1024:.1f} MB). Max: 40 MB.",
         )
 
     image_base64 = None
@@ -113,6 +113,32 @@ async def ask_with_file(
         image_base64 = base64.b64encode(file_data).decode("utf-8")
         image_mime = content_type
         logger.info("Processing image upload: %s (%s, %d bytes)", file.filename, content_type, len(file_data))
+    elif content_type == "application/pdf":
+        # Extract text from PDF
+        import io
+        try:
+            from PyPDF2 import PdfReader
+            reader = PdfReader(io.BytesIO(file_data))
+            pages = []
+            for i, page in enumerate(reader.pages):
+                text = page.extract_text() or ""
+                if text.strip():
+                    pages.append(f"[Page {i + 1}]\n{text}")
+            file_text = "\n\n".join(pages) if pages else ""
+            if not file_text:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not extract any text from the PDF. The file may be scanned/image-based.",
+                )
+            # Truncate very long PDFs to ~30k chars to stay within LLM context
+            if len(file_text) > 30000:
+                file_text = file_text[:30000] + "\n\n[...truncated — document too long...]"
+            logger.info("PDF text extracted: %s (%d pages, %d chars)", file.filename, len(reader.pages), len(file_text))
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error("PDF extraction failed: %s", exc)
+            raise HTTPException(status_code=400, detail=f"Failed to read PDF: {exc}")
     elif is_text:
         try:
             file_text = file_data.decode("utf-8")
