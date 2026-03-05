@@ -32,6 +32,17 @@ const MarkdownRenderer = (() => {
             return `\x00CODEBLOCK${idx}\x00`;
         });
 
+        // ── Step 1b: Extract <details>/<summary> blocks (safe HTML) ──
+        const detailsBlocks = [];
+        html = html.replace(/<details>([\s\S]*?)<\/details>/gi, (_m, inner) => {
+            const idx = detailsBlocks.length;
+            // Process inner content: preserve <summary> tags, render rest as markdown
+            let processed = inner
+                .replace(/<summary>(.*?)<\/summary>/gi, '\x00DETSUM_OPEN\x00$1\x00DETSUM_CLOSE\x00');
+            detailsBlocks.push(processed);
+            return `\x00DETAILSBLOCK${idx}\x00`;
+        });
+
         // ── Step 2: Extract inline code and replace with placeholders ──
         const inlineCodes = [];
         html = html.replace(/`([^`]+)`/g, (_m, code) => {
@@ -76,9 +87,15 @@ const MarkdownRenderer = (() => {
         html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
 
         // Ordered lists (1. item)
+        // First flatten any indented numbered items so they don't nest
+        html = html.replace(/^[ \t]+(\d+\.\s+)/gm, "$1");
         html = html.replace(/^\d+\.\s+(.+)$/gm, "<li>$1</li>");
-        html = html.replace(/(?<!<\/ul>)\n(<li>)/g, "<ol>$1");
-        html = html.replace(/(<\/li>)\n(?!<li>)/g, "$1</ol>");
+        // Group consecutive <li> (possibly separated by blank lines) into <ol>
+        html = html.replace(/((?:<li>.*<\/li>\n*)+)/g, function(match) {
+            // Only wrap if not already inside <ul>
+            if (match.indexOf('<ul>') !== -1) return match;
+            return '<ol>' + match.replace(/\n+/g, '\n') + '</ol>';
+        });
 
         // Paragraphs: wrap remaining loose lines
         html = html
@@ -94,6 +111,29 @@ const MarkdownRenderer = (() => {
         // ── Step 5: Restore code placeholders ──
         html = html.replace(/\x00CODEBLOCK(\d+)\x00/g, (_m, idx) => codeBlocks[parseInt(idx, 10)]);
         html = html.replace(/\x00INLINECODE(\d+)\x00/g, (_m, idx) => inlineCodes[parseInt(idx, 10)]);
+
+        // ── Step 6: Restore <details>/<summary> blocks ──
+        html = html.replace(/\x00DETAILSBLOCK(\d+)\x00/g, (_m, idx) => {
+            let inner = detailsBlocks[parseInt(idx, 10)];
+            // Render the inner markdown content
+            inner = inner
+                .replace(/\x00DETSUM_OPEN\x00/g, '<summary>')
+                .replace(/\x00DETSUM_CLOSE\x00/g, '</summary>');
+            // Process inner markdown (re-run render on the inner content)
+            let innerLines = inner.split('\n');
+            let processed = innerLines.map(function(line) {
+                line = line.trim();
+                if (!line) return '';
+                if (line.startsWith('<summary>')) return line;
+                // Handle numbered items inside details
+                var numMatch = line.match(/^\d+\.\s+(.+)$/);
+                if (numMatch) return '<li>' + escapeHtml(numMatch[1]) + '</li>';
+                return '<p>' + escapeHtml(line) + '</p>';
+            }).join('\n');
+            // Wrap consecutive <li> in <ol>
+            processed = processed.replace(/((?:<li>.*<\/li>\n*)+)/g, '<ol>$1</ol>');
+            return '<details>' + processed + '</details>';
+        });
 
         return html;
     }

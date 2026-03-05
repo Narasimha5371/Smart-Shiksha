@@ -45,8 +45,11 @@ RULES:
      showing how to apply the formulas
    - `### Real-World Analogy` — at least one relatable analogy
    - `### Common Mistakes` — pitfalls students usually encounter
-   - `### Practice Questions` — 5 practice problems of increasing difficulty \
-     (with answers in a collapsible `<details>` block or at the end)
+   - `### Practice Questions` — 5 practice problems of increasing difficulty. \
+     Use a **flat numbered list** (1. 2. 3. 4. 5.) — do NOT indent or nest \
+     the items. Put answers in a `<details><summary>Answers</summary>` block \
+     using the same flat numbered list format (1. 2. 3. 4. 5.).\
+     Close with `</details>`.
    - `### Quick Summary` — 5-7 bullet points covering the essentials
 3. **Depth**: Be detailed. Explain *why* things work, not just *what* they are. \
    Show derivations for key formulas when helpful.
